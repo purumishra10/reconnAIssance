@@ -1,0 +1,357 @@
+{
+  "dataset_version": "ds_50_seed42",
+  "seed": 42,
+  "record_count": 50,
+  "matches": {
+    "ORD-10001": {
+      "ledger_order_id": "ORD-10001",
+      "settlement_order_ref": "ORD-10001",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10002": {
+      "ledger_order_id": "ORD-10002",
+      "settlement_order_ref": "ORD-10002",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10003": {
+      "ledger_order_id": "ORD-10003",
+      "settlement_order_ref": "ORD-10003",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10004": {
+      "ledger_order_id": "ORD-10004",
+      "settlement_order_ref": "ORD-10004",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10005": {
+      "ledger_order_id": "ORD-10005",
+      "settlement_order_ref": "ORD-10005",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "holdout"
+    },
+    "ORD-10006": {
+      "ledger_order_id": "ORD-10006",
+      "settlement_order_ref": "ORD-10006",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10007": {
+      "ledger_order_id": "ORD-10007",
+      "settlement_order_ref": "ORD-10007",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "holdout"
+    },
+    "ORD-10008": {
+      "ledger_order_id": "ORD-10008",
+      "settlement_order_ref": "ORD-10008",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10009": {
+      "ledger_order_id": "ORD-10009",
+      "settlement_order_ref": "ORD-10009",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10011": {
+      "ledger_order_id": "ORD-10011",
+      "settlement_order_ref": "ORD-10011",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "holdout"
+    },
+    "ORD-10012": {
+      "ledger_order_id": "ORD-10012",
+      "settlement_order_ref": "ORD-10012",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10013": {
+      "ledger_order_id": "ORD-10013",
+      "settlement_order_ref": "ORD-10013",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "holdout"
+    },
+    "ORD-10014": {
+      "ledger_order_id": "ORD-10014",
+      "settlement_order_ref": "ORD-10014",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10015": {
+      "ledger_order_id": "ORD-10015",
+      "settlement_order_ref": "ORD-00015",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10016": {
+      "ledger_order_id": "ORD-10016",
+      "settlement_order_ref": "ORD-10016",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10017": {
+      "ledger_order_id": "ORD-10017",
+      "settlement_order_ref": "ORD-10017",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "holdout"
+    },
+    "ORD-10018": {
+      "ledger_order_id": "ORD-10018",
+      "settlement_order_ref": "ORD-10018",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10019": {
+      "ledger_order_id": "ORD-10019",
+      "settlement_order_ref": "ORD-10019",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10020": {
+      "ledger_order_id": "ORD-10020",
+      "settlement_order_ref": "ORD-10020",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10021": {
+      "ledger_order_id": "ORD-10021",
+      "settlement_order_ref": "ORD-10021",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10022": {
+      "ledger_order_id": "ORD-10022",
+      "settlement_order_ref": "ORD-10022",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10023": {
+      "ledger_order_id": "ORD-10023",
+      "settlement_order_ref": "ORD-10023",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10024": {
+      "ledger_order_id": "ORD-10024",
+      "settlement_order_ref": "ORD-10024",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "tuning"
+    },
+    "ORD-10025": {
+      "ledger_order_id": "ORD-10025",
+      "settlement_order_ref": "ORD-10025",
+      "batch_id": "STL-1001",
+      "utr": "UTR26081001RZP",
+      "split": "holdout"
+    },
+    "ORD-10026": {
+      "ledger_order_id": "ORD-10026",
+      "settlement_order_ref": "ORD-10026",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10027": {
+      "ledger_order_id": "ORD-10027",
+      "settlement_order_ref": "ORD-10027",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10028": {
+      "ledger_order_id": "ORD-10028",
+      "settlement_order_ref": "ORD-10028",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "holdout"
+    },
+    "ORD-10029": {
+      "ledger_order_id": "ORD-10029",
+      "settlement_order_ref": "ORD-10029",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10030": {
+      "ledger_order_id": "ORD-10030",
+      "settlement_order_ref": "ORD-10030",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "holdout"
+    },
+    "ORD-10031": {
+      "ledger_order_id": "ORD-10031",
+      "settlement_order_ref": "ORD-10031",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "holdout"
+    },
+    "ORD-10032": {
+      "ledger_order_id": "ORD-10032",
+      "settlement_order_ref": "ORD-10032",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "holdout"
+    },
+    "ORD-10033": {
+      "ledger_order_id": "ORD-10033",
+      "settlement_order_ref": "ORD-10033",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10034": {
+      "ledger_order_id": "ORD-10034",
+      "settlement_order_ref": "ORD-10034",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10035": {
+      "ledger_order_id": "ORD-10035",
+      "settlement_order_ref": "ORD-10035",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "holdout"
+    },
+    "ORD-10036": {
+      "ledger_order_id": "ORD-10036",
+      "settlement_order_ref": "ORD-10036",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10037": {
+      "ledger_order_id": "ORD-10037",
+      "settlement_order_ref": "ORD-10037",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10038": {
+      "ledger_order_id": "ORD-10038",
+      "settlement_order_ref": "ORD-10038",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10039": {
+      "ledger_order_id": "ORD-10039",
+      "settlement_order_ref": "ORD-10039",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10040": {
+      "ledger_order_id": "ORD-10040",
+      "settlement_order_ref": "ORD-10040",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "holdout"
+    },
+    "ORD-10041": {
+      "ledger_order_id": "ORD-10041",
+      "settlement_order_ref": "ORD-10041",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10042": {
+      "ledger_order_id": "ORD-10042",
+      "settlement_order_ref": "ORD-10042",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10043": {
+      "ledger_order_id": "ORD-10043",
+      "settlement_order_ref": "ORD-10043",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "holdout"
+    },
+    "ORD-10044": {
+      "ledger_order_id": "ORD-10044",
+      "settlement_order_ref": "ORD-10044",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10045": {
+      "ledger_order_id": "ORD-10045",
+      "settlement_order_ref": "ORD-10045",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "holdout"
+    },
+    "ORD-10047": {
+      "ledger_order_id": "ORD-10047",
+      "settlement_order_ref": "ORD-10047",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10048": {
+      "ledger_order_id": "ORD-10048",
+      "settlement_order_ref": "ORD-10048",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10049": {
+      "ledger_order_id": "ORD-10049",
+      "settlement_order_ref": "ORD-10049",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    },
+    "ORD-10050": {
+      "ledger_order_id": "ORD-10050",
+      "settlement_order_ref": "ORD-10050",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning"
+    }
+  },
+  "missing_in_settlement": [
+    "ORD-10010"
+  ],
+  "missing_in_ledger": [
+    "ORD-EXTRA-9000",
+    "ORD-EXTRA-9001"
+  ],
+  "duplicates": [
+    "ORD-10007",
+    "ORD-10028"
+  ],
+  "split_settlements": [
+    "ORD-10046"
+  ]
+}
