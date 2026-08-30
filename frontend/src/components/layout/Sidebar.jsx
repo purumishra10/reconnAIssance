@@ -1,12 +1,10 @@
 import React from 'react';
-import { LayoutDashboard, PlayCircle, MessageSquareText, ShieldAlert, FileSearch } from 'lucide-react';
+import { LayoutDashboard, PlayCircle, MessageSquareText, FileSearch } from 'lucide-react';
 
-export function Sidebar({ activeTab, onSelectTab, exceptionCount = 0 }) {
+export function Sidebar({ activeTab, onSelectTab }) {
   const navItems = [
     { id: 'dashboard', label: 'Overview & Metrics', icon: LayoutDashboard },
     { id: 'reconcile', label: 'Run Reconciliation', icon: PlayCircle },
-    { id: 'matches', label: 'Matched Groups', icon: ShieldAlert },
-    { id: 'exceptions', label: 'Exceptions & Noise', icon: ShieldAlert, badge: exceptionCount },
     { id: 'qa', label: 'Settlement Q&A', icon: MessageSquareText },
     { id: 'audit', label: 'Audit Trail', icon: FileSearch },
   ];
@@ -38,6 +36,7 @@ export function Sidebar({ activeTab, onSelectTab, exceptionCount = 0 }) {
           <button
             key={item.id}
             onClick={() => onSelectTab(item.id)}
+            aria-label={item.label}
             style={{
               display: 'flex',
               alignItems: 'center',
