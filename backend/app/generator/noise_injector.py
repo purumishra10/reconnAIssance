@@ -73,5 +73,5 @@ def generate_messy_narration(utr: str, batch_id: str, rng: random.Random) -> str
     narration = rng.choice(templates)
     # 5% chance of truncated UTR or extra bank code noise
     if rng.random() < 0.05:
-        narration = narration[: rng.randint(len(narration) - 6, len(narration))]
+        narration = narration[: rng.randint(len(narration) - 6, len(narration) - 1)]
     return narration

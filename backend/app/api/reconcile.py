@@ -1,3 +1,4 @@
+import asyncio
 import csv
 import io
 import json
@@ -31,11 +32,11 @@ class ReconcileRunResponse(BaseModel):
     status: str
 
 
-async def run_pipeline_task(run_id: str, dataset_version: str, split: str):
-    """Background execution task for reconciliation pipeline."""
+def run_pipeline_task(run_id: str, dataset_version: str, split: str):
+    """Background execution task for reconciliation pipeline (sync wrapper for SQLite safety)."""
     with Session(engine) as session:
         pipeline = ReconciliationPipeline(run_id, dataset_version, split)
-        await pipeline.execute(session)
+        asyncio.run(pipeline.execute(session))
 
 
 @router.post("/run", response_model=ReconcileRunResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -122,7 +123,10 @@ def get_run_matches(
     if tier:
         query = query.where(MatchGroup.tier == tier)
 
-    total = session.exec(select(func.count(MatchGroup.id)).where(MatchGroup.run_id == run_id)).one()
+    count_query = select(func.count(MatchGroup.id)).where(MatchGroup.run_id == run_id)
+    if tier:
+        count_query = count_query.where(MatchGroup.tier == tier)
+    total = session.exec(count_query).one()
 
     offset = (page - 1) * page_size
     groups = session.exec(query.offset(offset).limit(page_size)).all()
@@ -191,9 +195,10 @@ def get_run_exceptions(
     if reason_code:
         query = query.where(ReconciliationException.reason_code == reason_code)
 
-    total = session.exec(
-        select(func.count(ReconciliationException.id)).where(ReconciliationException.run_id == run_id)
-    ).one()
+    count_query = select(func.count(ReconciliationException.id)).where(ReconciliationException.run_id == run_id)
+    if reason_code:
+        count_query = count_query.where(ReconciliationException.reason_code == reason_code)
+    total = session.exec(count_query).one()
 
     offset = (page - 1) * page_size
     records = session.exec(query.offset(offset).limit(page_size)).all()
@@ -246,7 +251,14 @@ def get_run_audit_log(
     if action:
         query = query.where(AuditLog.action == action)
 
-    total = session.exec(select(func.count(AuditLog.id)).where(AuditLog.run_id == run_id)).one()
+    count_query = select(func.count(AuditLog.id)).where(AuditLog.run_id == run_id)
+    if canonical_transaction_id:
+        count_query = count_query.where(AuditLog.canonical_transaction_id == canonical_transaction_id)
+    if tier:
+        count_query = count_query.where(AuditLog.tier == tier)
+    if action:
+        count_query = count_query.where(AuditLog.action == action)
+    total = session.exec(count_query).one()
 
     offset = (page - 1) * page_size
     entries = session.exec(query.order_by(AuditLog.id.asc()).offset(offset).limit(page_size)).all()

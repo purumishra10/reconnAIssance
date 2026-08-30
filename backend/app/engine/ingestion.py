@@ -49,10 +49,11 @@ class IngestionEngine:
 
     def ingest(self, session: Session) -> List[CanonicalTransaction]:
         """Load raw rows for the specified split and normalize into CanonicalTransaction records."""
-        # 1. Clean any existing canonical rows for this run
-        session.exec(
-            delete(CanonicalTransaction).where(CanonicalTransaction.dataset_version == self.dataset_version)
-        )
+        # 1. Clean any existing canonical rows for this run (scoped by split to avoid cross-contamination)
+        del_query = delete(CanonicalTransaction).where(CanonicalTransaction.dataset_version == self.dataset_version)
+        if self.split in ("tuning", "holdout"):
+            del_query = del_query.where(CanonicalTransaction.dataset_split == self.split)
+        session.exec(del_query)
         session.commit()
 
         canonical_records: List[CanonicalTransaction] = []

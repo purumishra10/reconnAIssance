@@ -220,6 +220,16 @@ class SyntheticDataGenerator:
                 batches[next_batch_id]["net_total_paise"] += split_half_2
                 settlement_rows.append(s_row_2)
                 ground_truth["split_settlements"].append(order_id)
+
+                # Record ground truth for split settlements (before continue)
+                ground_truth["matches"][order_id] = {
+                    "ledger_order_id": ledger_order_id,
+                    "settlement_order_ref": settlement_order_ref,
+                    "batch_id": current_batch_id,
+                    "utr": current_utr,
+                    "split": dataset_split,
+                    "split_settlement": True,
+                }
                 continue
 
             # Standard Settlement Row

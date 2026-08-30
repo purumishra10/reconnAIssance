@@ -311,6 +311,14 @@
       "utr": "UTR26081002RZP",
       "split": "holdout"
     },
+    "ORD-10046": {
+      "ledger_order_id": "ORD-10046",
+      "settlement_order_ref": "ORD-10046",
+      "batch_id": "STL-1002",
+      "utr": "UTR26081002RZP",
+      "split": "tuning",
+      "split_settlement": true
+    },
     "ORD-10047": {
       "ledger_order_id": "ORD-10047",
       "settlement_order_ref": "ORD-10047",

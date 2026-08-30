@@ -26,10 +26,11 @@ class MockLLMClient(LLMClient):
         for pair in pairs:
             item_a = pair.get("item_a", {})
             item_b = pair.get("item_b", {})
-            ref_a = item_a.get("normalized_ref", "")
-            ref_b = item_b.get("normalized_ref", "")
-            amt_a = item_a.get("amount_paise", 0)
-            amt_b = item_b.get("amount_paise", 0)
+            # Support both normalized payload fields and raw payload fields from tier3_ai.py
+            ref_a = item_a.get("normalized_ref", "") or item_a.get("order_id", "") or item_a.get("order_ref", "")
+            ref_b = item_b.get("normalized_ref", "") or item_b.get("order_id", "") or item_b.get("order_ref", "")
+            amt_a = item_a.get("amount_paise", 0) or item_a.get("gross_amount_paise", 0) or item_a.get("net_amount_paise", 0)
+            amt_b = item_b.get("amount_paise", 0) or item_b.get("net_amount_paise", 0) or item_b.get("gross_amount_paise", 0)
 
             # Heuristic calculation for mock AI evaluation
             # Calculate fee-adjusted tolerance
