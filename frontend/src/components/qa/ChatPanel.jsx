@@ -2,6 +2,60 @@ import React, { useState } from 'react';
 import { api } from '../../services/api';
 import { MessageSquareText, Send, Bot, User, Sparkles, Tag, HelpCircle } from 'lucide-react';
 
+/**
+ * Lightweight inline markdown renderer for bold (**), italic (*), and inline code (`).
+ * Returns an array of React elements.
+ */
+function renderInlineMarkdown(text) {
+  if (!text) return text;
+  // Split by markdown patterns: **bold**, *italic*, `code`
+  const parts = [];
+  // Regex: match **bold**, *italic*, or `code`
+  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(text)) !== null) {
+    // Push text before the match
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+
+    if (match[2]) {
+      // **bold**
+      parts.push(<strong key={match.index} style={{ fontWeight: '700' }}>{match[2]}</strong>);
+    } else if (match[3]) {
+      // *italic*
+      parts.push(<em key={match.index}>{match[3]}</em>);
+    } else if (match[4]) {
+      // `code`
+      parts.push(
+        <code
+          key={match.index}
+          style={{
+            background: 'var(--bg-tertiary)',
+            padding: '0.1rem 0.35rem',
+            borderRadius: '4px',
+            fontSize: '0.8em',
+            fontFamily: 'monospace',
+          }}
+        >
+          {match[4]}
+        </code>
+      );
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Push remaining text
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : text;
+}
+
 export function ChatPanel({ runId }) {
   const [messages, setMessages] = useState([
     {
@@ -157,7 +211,9 @@ export function ChatPanel({ runId }) {
                   boxShadow: 'var(--shadow-sm)',
                 }}
               >
-                <div style={{ whiteSpace: 'pre-wrap' }}>{m.content}</div>
+                <div style={{ whiteSpace: 'pre-wrap' }}>
+                  {renderInlineMarkdown(m.content)}
+                </div>
 
                 {/* Cited Audit Entries */}
                 {m.cited_audit_log_ids && m.cited_audit_log_ids.length > 0 && (

@@ -70,6 +70,7 @@ export function Header({ runs, currentRunId, onSelectRun, onRefresh, isRefreshin
             style={{ padding: '0.45rem 0.75rem', fontSize: '0.8rem' }}
             onClick={onRefresh}
             title="Refresh current run state"
+            aria-label="Refresh current run state"
           >
             <RefreshCw size={14} className={isRefreshing ? 'animate-spin' : ''} />
             Refresh
@@ -81,6 +82,7 @@ export function Header({ runs, currentRunId, onSelectRun, onRefresh, isRefreshin
             onClick={toggleTheme}
             style={{ padding: '0.45rem 0.75rem', borderRadius: '8px' }}
             title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
+            aria-label={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
           >
             {theme === 'dark' ? <Sun size={16} color="var(--accent-amber)" /> : <Moon size={16} color="var(--accent-blue)" />}
             <span style={{ fontSize: '0.75rem' }}>{theme === 'dark' ? 'Light' : 'Dark'}</span>

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../../services/api';
 import { Play, Sparkles, Database, CheckCircle, RefreshCw, Layers, ShieldCheck } from 'lucide-react';
+
+const MAX_POLL_ITERATIONS = 120; // 2 minutes at 1s interval
 
 export function RunForm({ onRunCompleted, onSelectRun }) {
   const [selectedPreset, setSelectedPreset] = useState('demo');
@@ -13,6 +15,19 @@ export function RunForm({ onRunCompleted, onSelectRun }) {
   const [running, setRunning] = useState(false);
   const [statusMessage, setStatusMessage] = useState('');
   const [datasetVersion, setDatasetVersion] = useState('ds_2000_seed42');
+
+  const pollIntervalRef = useRef(null);
+  const pollCountRef = useRef(0);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, []);
 
   const presets = [
     {
@@ -71,18 +86,31 @@ export function RunForm({ onRunCompleted, onSelectRun }) {
 
       const runId = runRes.run_id;
 
-      // 3. Poll for completion
-      const pollInterval = setInterval(async () => {
+      // 3. Poll for completion with max-poll guard and proper cleanup
+      pollCountRef.current = 0;
+      pollIntervalRef.current = setInterval(async () => {
+        pollCountRef.current += 1;
+
+        if (pollCountRef.current >= MAX_POLL_ITERATIONS) {
+          clearInterval(pollIntervalRef.current);
+          pollIntervalRef.current = null;
+          setRunning(false);
+          setStatusMessage('Run timed out after 2 minutes. Check the dashboard for status.');
+          return;
+        }
+
         try {
           const summary = await api.getRunSummary(runId);
           if (summary.status === 'completed') {
-            clearInterval(pollInterval);
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
             setRunning(false);
             setStatusMessage(`Reconciliation completed successfully! Match rate: ${(summary.match_rate * 100).toFixed(1)}%`);
             if (onRunCompleted) onRunCompleted(runId);
             if (onSelectRun) onSelectRun(runId);
           } else if (summary.status === 'failed') {
-            clearInterval(pollInterval);
+            clearInterval(pollIntervalRef.current);
+            pollIntervalRef.current = null;
             setRunning(false);
             setStatusMessage(`Run failed: ${summary.error_message}`);
           }
