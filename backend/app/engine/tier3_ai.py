@@ -1,6 +1,9 @@
 import json
+import logging
 import uuid
+from datetime import date
 from typing import List, Tuple, Set, Dict, Optional
+from rapidfuzz import fuzz
 from sqlmodel import Session
 
 from ..models.schemas import (
@@ -10,6 +13,45 @@ from ..models.schemas import (
     AuditLog,
 )
 from ..services.llm_client import get_llm_client
+
+logger = logging.getLogger(__name__)
+
+
+def _pre_score_candidate(
+    ledger: CanonicalTransaction, settlement: CanonicalTransaction
+) -> float:
+    """Lightweight pre-scorer: date proximity + partial ref overlap + fee-adjusted amount closeness."""
+    score = 0.0
+
+    # 1. Reference similarity (0-40 points)
+    ref_sim = fuzz.ratio(ledger.normalized_ref, settlement.normalized_ref) / 100.0
+    score += ref_sim * 40.0
+
+    # 2. Fee-adjusted amount closeness (0-35 points)
+    gross = ledger.amount_paise
+    net = settlement.amount_paise
+    if gross > 0 and net > 0:
+        # Expected net after 2% MDR + 18% GST on fee
+        fee = int(round(gross * 0.02))
+        gst = int(round(fee * 0.18))
+        expected_net = gross - fee - gst
+        diff = abs(net - expected_net)
+        deviation_pct = diff / max(expected_net, 1)
+        amt_score = max(0.0, 1.0 - (deviation_pct / 0.05))
+        score += amt_score * 35.0
+
+    # 3. Date proximity (0-25 points) — T+2 is expected
+    try:
+        d1 = date.fromisoformat(ledger.event_date[:10])
+        d2 = date.fromisoformat(settlement.event_date[:10])
+        day_diff = abs((d1 - d2).days)
+        # Perfect score at <=2 days, degrades to 0 at 7+ days
+        date_score = max(0.0, 1.0 - (max(0, day_diff - 2) / 5.0))
+        score += date_score * 25.0
+    except Exception:
+        pass
+
+    return score
 
 
 class Tier3AIMatcher:
@@ -33,7 +75,7 @@ class Tier3AIMatcher:
         members: List[MatchGroupMember] = []
         audit_logs: List[AuditLog] = []
 
-        # Prepare candidate pairs for AI evaluation (group up to 10 at a time)
+        # Prepare candidate pairs for AI evaluation using pre-scoring
         candidate_pairs: List[Dict] = []
         pair_mappings: List[Tuple[CanonicalTransaction, CanonicalTransaction]] = []
 
@@ -41,29 +83,39 @@ class Tier3AIMatcher:
             if l.id in matched_canonical_ids:
                 continue
 
-            # Find closest candidate in settlement records
+            # Pre-score ALL unmatched settlements and pick the best candidate
+            scored_candidates: List[Tuple[float, CanonicalTransaction]] = []
             for s in settlement_records:
                 if s.id in matched_canonical_ids:
                     continue
+                pre_score = _pre_score_candidate(l, s)
+                # Only consider candidates with a minimum pre-score threshold
+                if pre_score >= 20.0:
+                    scored_candidates.append((pre_score, s))
 
-                # Add as candidate pair for AI inspection
-                try:
-                    payload_a = json.loads(l.raw_payload_json)
-                except Exception:
-                    payload_a = {"ref": l.normalized_ref, "amount_paise": l.amount_paise, "date": l.event_date}
+            if not scored_candidates:
+                continue
 
-                try:
-                    payload_b = json.loads(s.raw_payload_json)
-                except Exception:
-                    payload_b = {"ref": s.normalized_ref, "amount_paise": s.amount_paise, "date": s.event_date}
+            # Sort by pre-score descending and take the best candidate
+            scored_candidates.sort(key=lambda x: x[0], reverse=True)
+            best_candidate = scored_candidates[0][1]
 
-                candidate_pairs.append({
-                    "item_a": payload_a,
-                    "item_b": payload_b,
-                })
-                pair_mappings.append((l, s))
-                # Only take 1 best candidate per ledger row for Tier 3 to keep token usage small
-                break
+            # Build the pair payload for the LLM
+            try:
+                payload_a = json.loads(l.raw_payload_json)
+            except Exception:
+                payload_a = {"ref": l.normalized_ref, "amount_paise": l.amount_paise, "date": l.event_date}
+
+            try:
+                payload_b = json.loads(best_candidate.raw_payload_json)
+            except Exception:
+                payload_b = {"ref": best_candidate.normalized_ref, "amount_paise": best_candidate.amount_paise, "date": best_candidate.event_date}
+
+            candidate_pairs.append({
+                "item_a": payload_a,
+                "item_b": payload_b,
+            })
+            pair_mappings.append((l, best_candidate))
 
         if not candidate_pairs:
             return [], records
@@ -76,8 +128,9 @@ class Tier3AIMatcher:
 
             try:
                 decisions = await self.llm_client.match_candidates(batch_pairs)
-            except Exception as e:
-                decisions = [{"match": False, "confidence": 0.0, "reason": f"AI evaluation failed: {e}"}] * len(batch_pairs)
+            except Exception:
+                logger.exception("Tier 3 AI match_candidates batch failed")
+                decisions = [{"match": False, "confidence": 0.0, "reason": "AI evaluation failed"}] * len(batch_pairs)
 
             for decision, (l, s) in zip(decisions, batch_mappings):
                 if l.id in matched_canonical_ids or s.id in matched_canonical_ids:

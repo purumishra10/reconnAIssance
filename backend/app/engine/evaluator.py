@@ -1,5 +1,6 @@
 import json
 import os
+from datetime import datetime
 from typing import Dict, Any, List
 from sqlmodel import Session, select
 
@@ -35,6 +36,13 @@ class EvaluationHarness:
             except Exception:
                 gt_matches = {}
 
+        # Build O(1) lookup dict: normalized_ledger_ref -> ground truth entry
+        gt_by_ledger_ref: Dict[str, Dict[str, Any]] = {}
+        for order_id, entry in gt_matches.items():
+            ledger_ref = entry.get("ledger_order_id", "").lower()
+            if ledger_ref:
+                gt_by_ledger_ref[ledger_ref] = entry
+
         # Fetch match groups for this run
         groups = session.exec(
             select(MatchGroup).where(MatchGroup.run_id == self.run_id)
@@ -50,7 +58,7 @@ class EvaluationHarness:
         for member, c_tx in members:
             group_member_map.setdefault(member.group_id, []).append(c_tx)
 
-        # Count true positives, false positives, false negatives
+        # Count true positives, false positives
         true_positives = 0
         false_positives = 0
 
@@ -63,21 +71,19 @@ class EvaluationHarness:
                 l_ref = ledger_txs[0].normalized_ref
                 s_ref = settle_txs[0].normalized_ref
 
-                # Verify against ground truth
-                # Check if l_ref maps to expected settlement in ground truth
-                matched_in_gt = False
-                for order_id, expected in gt_matches.items():
-                    exp_l = expected.get("ledger_order_id", "").lower()
-                    exp_s = expected.get("settlement_order_ref", "").lower()
-                    if (l_ref == exp_l and s_ref == exp_s) or (l_ref in exp_l and s_ref in exp_s):
-                        matched_in_gt = True
-                        break
-
-                if matched_in_gt or group.confidence >= 0.85:
-                    true_positives += 1
+                # O(1) ground truth lookup by ledger ref
+                gt_entry = gt_by_ledger_ref.get(l_ref)
+                if gt_entry:
+                    exp_s = gt_entry.get("settlement_order_ref", "").lower()
+                    # Exact match on both refs (no substring matching)
+                    if l_ref == gt_entry.get("ledger_order_id", "").lower() and s_ref == exp_s:
+                        true_positives += 1
+                    else:
+                        false_positives += 1
                 else:
                     false_positives += 1
             elif txs:
+                # Groups with only one source type — count as TP if they exist
                 true_positives += 1
 
         total_system_matches = len(groups)
@@ -99,7 +105,6 @@ class EvaluationHarness:
         match_rate = min(1.0, matched_tx_count / max(1, total_records))
 
         # Calculate throughput (records / sec)
-        from datetime import datetime
         try:
             t_start = datetime.fromisoformat(start_time_iso)
             t_end = datetime.fromisoformat(end_time_iso)
