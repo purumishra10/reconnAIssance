@@ -57,7 +57,7 @@ def _pre_score_candidate(
 class Tier3AIMatcher:
     def __init__(self, run_id: str):
         self.run_id = run_id
-        self.llm_client = get_llm_client()
+        self.llm_client = get_llm_client("match")
 
     async def match(
         self, session: Session, records: List[CanonicalTransaction]
