@@ -1,3 +1,4 @@
+import asyncio
 import json
 import logging
 import os
@@ -14,8 +15,86 @@ class LLMClient:
     async def match_candidates(self, pairs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         raise NotImplementedError
 
-    async def answer_question(self, question: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def answer_question(
+        self,
+        question: str,
+        context: Dict[str, Any],
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> Dict[str, Any]:
         raise NotImplementedError
+
+
+ASSISTANT_SYSTEM = """You are the reconnAIssance in-app assistant. You ONLY discuss this product.
+
+In scope: reconnAIssance UI/features, 3-tier recon (exact → fuzzy fee-tolerant → AI), merchant ledger vs Razorpay settlements vs bank credits, ~2% MDR + 18% GST on fee, T+2 lag, match/exception/audit data for the current run, precision/recall/match rate.
+
+Out of scope: general knowledge, math puzzles, news, coding help, personal advice, or anything not about this app. Refuse in one short sentence and point the user back to recon topics.
+
+Rules:
+- Use the live run context for this-run facts. Never invent IDs, amounts, or metrics.
+- If a fact is missing from context, say you do not have it.
+- Keep answers short (a few sentences). Markdown is fine.
+- Reply with plain text only (no JSON wrapper).
+"""
+
+OFF_TOPIC_REFUSAL = (
+    "I only answer questions about **reconnAIssance** — this app's reconciliation pipeline, "
+    "Razorpay fees and settlements, and the current run's metrics, matches, exceptions, and audit trail. "
+    "Ask about those and I can help."
+)
+
+_SCOPE_TERMS = (
+    "recon", "reconnaissance", "settlement", "razorpay", "mdr", "gst", "ledger",
+    "exception", "match", "precision", "recall", "tier", "batch", "payout", "fee",
+    "shortfall", "holdout", "held-out", "audit", "utr", "pipeline", "dataset",
+    "fuzzy", "exact", "dashboard", "csv", "commission", "refund", "paise",
+    "rupee", "throughput", "q&a", "qa agent", "matched group", "noise",
+    "t+2", "t+1", "bank credit", "bank statement", "order id", "stl-", "ord-",
+)
+
+
+def question_in_product_scope(question: str) -> bool:
+    q = (question or "").lower()
+    if re.search(r"\b(stl|ord)-\d+", q):
+        return True
+    return any(term in q for term in _SCOPE_TERMS)
+
+
+def _format_history(history: Optional[List[Dict[str, str]]]) -> str:
+    if not history:
+        return "(none)"
+    lines = []
+    for msg in history[-12:]:
+        role = msg.get("role", "user")
+        content = (msg.get("content") or "").strip()
+        if content:
+            lines.append(f"{role}: {content}")
+    return "\n".join(lines) if lines else "(none)"
+
+
+def _parse_qa_payload(text: str) -> Optional[Dict[str, Any]]:
+    cleaned = (text or "").strip()
+    if not cleaned:
+        return None
+    if cleaned.startswith("```"):
+        cleaned = re.sub(r"^```(?:json)?\n?", "", cleaned)
+        cleaned = re.sub(r"\n?```$", "", cleaned)
+    try:
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, dict) and parsed.get("answer"):
+            cited = parsed.get("cited_audit_log_ids") or []
+            if not isinstance(cited, list):
+                cited = []
+            cited_ids = []
+            for item in cited:
+                try:
+                    cited_ids.append(int(item))
+                except (TypeError, ValueError):
+                    continue
+            return {"answer": str(parsed["answer"]), "cited_audit_log_ids": cited_ids}
+    except (json.JSONDecodeError, TypeError):
+        pass
+    return {"answer": cleaned, "cited_audit_log_ids": []}
 
 
 class MockLLMClient(LLMClient):
@@ -58,60 +137,125 @@ class MockLLMClient(LLMClient):
                 })
         return decisions
 
-    async def answer_question(self, question: str, context: Dict[str, Any]) -> Dict[str, Any]:
+    async def answer_question(
+        self,
+        question: str,
+        context: Dict[str, Any],
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> Dict[str, Any]:
         q_lower = question.lower()
         run_id = context.get("run_id", "current_run")
         metrics = context.get("metrics", {})
         recent_audits = context.get("audit_logs", [])
         exceptions = context.get("exceptions", [])
+        cited_ids = [a.get("id") for a in recent_audits[:3] if a.get("id")]
 
-        # Check for specific batch/order query
+        if not question_in_product_scope(question):
+            return {"answer": OFF_TOPIC_REFUSAL, "cited_audit_log_ids": []}
+
         batch_match = re.search(r"(stl-\d+)", q_lower)
         order_match = re.search(r"(ord-\d+)", q_lower)
-
-        cited_ids = [a.get("id", 1) for a in recent_audits[:3] if a.get("id")]
 
         if batch_match:
             batch_id = batch_match.group(1).upper()
             return {
-                "answer": f"Settlement batch **{batch_id}** was processed under standard T+2 settlement terms. The total gross transaction value was adjusted by standard 2% Razorpay commission fee plus 18% GST on the commission. Additionally, any partial refunds or rounding adjustments occurring within the payout cycle were deducted before net transfer to the merchant's bank account.",
+                "answer": (
+                    f"Settlement batch **{batch_id}** in run `{run_id}` is explained using the standard payout model: "
+                    "gross sales minus **2% Razorpay MDR** and **18% GST on that fee**, plus any refunds or T+2 timing lag "
+                    "before the bank credit lands. Check the matched-group drawer and audit trail for the exact members of that batch."
+                ),
                 "cited_audit_log_ids": cited_ids,
             }
-        elif order_match:
+        if order_match:
             order_id = order_match.group(1).upper()
             return {
-                "answer": f"Order **{order_id}** was analyzed across the three ledger sources. In the sales ledger, the order was recorded with its gross amount. The corresponding Razorpay settlement entry reflects the net amount after 2% MDR and 18% GST fee deductions.",
+                "answer": (
+                    f"Order **{order_id}** is evaluated across the sales ledger, Razorpay settlement, and bank credit. "
+                    "Gross ledger amount will not equal net payout after 2% MDR and 18% GST on the fee. "
+                    "If it is still unmatched, it should appear under Exceptions with a reason code."
+                ),
                 "cited_audit_log_ids": cited_ids,
             }
-        elif "short" in q_lower or "difference" in q_lower or "deduct" in q_lower:
+        if any(k in q_lower for k in ("short", "difference", "deduct", "fee", "mdr", "gst")):
             return {
-                "answer": f"Settlement payout differences typically arise from three operational factors: (1) **2% Razorpay MDR commission** on gross transaction value, (2) **18% GST charged on the commission fee**, and (3) **customer refund adjustments** processed prior to the payout cut-off window. These deductions are documented in the audit log for each matched group.",
+                "answer": (
+                    "Payouts usually fall short of gross sales for three documented reasons: "
+                    "(1) **2% Razorpay MDR** on gross value, (2) **18% GST on that commission**, and "
+                    "(3) **refunds or T+2 settlement lag**. Those adjustments are written into match reasons and the audit log."
+                ),
                 "cited_audit_log_ids": cited_ids,
             }
-        elif "accuracy" in q_lower or "match rate" in q_lower or "precision" in q_lower:
-            mr = metrics.get("match_rate", 0.93)
-            prec = metrics.get("precision", 0.97)
-            rec = metrics.get("recall", 0.91)
+        if any(k in q_lower for k in ("accuracy", "match rate", "precision", "recall", "metric")):
+            mr = metrics.get("match_rate") or 0
+            prec = metrics.get("precision") or 0
+            rec = metrics.get("recall") or 0
             return {
-                "answer": f"The reconciliation run achieved a **Match Rate of {mr*100:.1f}%**, **Precision of {prec*100:.1f}%**, and **Recall of {rec*100:.1f}%** evaluated against the held-out test split. Unresolved records are categorized in the Exceptions table with inspectable reason codes.",
+                "answer": (
+                    f"Run `{run_id}` scored **match rate {mr*100:.1f}%**, **precision {prec*100:.1f}%**, "
+                    f"and **recall {rec*100:.1f}%** on the held-out split. "
+                    f"Tier split: {metrics.get('exact_matches', 0)} exact, {metrics.get('fuzzy_matches', 0)} fuzzy, "
+                    f"{metrics.get('ai_matches', 0)} AI-assisted, {metrics.get('exception_count', 0)} exceptions."
+                ),
                 "cited_audit_log_ids": cited_ids,
             }
-        else:
+        if "exception" in q_lower:
+            sample = exceptions[:3]
+            codes = ", ".join(sorted({e.get("reason_code", "?") for e in exceptions})) or "none listed"
             return {
-                "answer": f"Based on the reconciled dataset for run `{run_id}`, the system processed {metrics.get('record_count', 0)} total records. {metrics.get('exact_matches', 0)} were matched in Tier 1 (Exact), {metrics.get('fuzzy_matches', 0)} in Tier 2 (Fuzzy), and {metrics.get('ai_matches', 0)} via AI Tier. There are currently {metrics.get('exception_count', 0)} unresolved exceptions.",
+                "answer": (
+                    f"This run has **{metrics.get('exception_count', 0)}** unresolved exceptions. "
+                    f"Reason codes present: {codes}. "
+                    + (f"Example: {sample[0].get('reason_text')}" if sample else "")
+                ),
                 "cited_audit_log_ids": cited_ids,
             }
+
+        return {
+            "answer": (
+                f"Run `{run_id}` processed **{metrics.get('record_count', 0)}** records: "
+                f"{metrics.get('exact_matches', 0)} Tier 1 exact, {metrics.get('fuzzy_matches', 0)} Tier 2 fuzzy, "
+                f"{metrics.get('ai_matches', 0)} Tier 3 AI, and {metrics.get('exception_count', 0)} exceptions remain. "
+                "Ask about fees, a specific STL/ORD id, or precision/recall for more detail. "
+                "For general (non-recon) questions, add a Gemini API key so the live assistant can answer freely."
+            ),
+            "cited_audit_log_ids": cited_ids,
+        }
 
 
 class GeminiClient(LLMClient):
-    """Live Google Gemini API client."""
+    """Live Google Gemini API client (google-genai SDK)."""
 
-    def __init__(self, api_key: str, model_name: str = "gemini-2.0-flash"):
-        import google.generativeai as genai
+    def __init__(self, api_key: str, model_name: str = "gemini-3.6-flash"):
+        from google import genai
+        from google.genai import types
+
         self.api_key = api_key
         self.model_name = model_name
-        genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel(model_name)
+        self.client = genai.Client(
+            api_key=api_key,
+            http_options=types.HttpOptions(timeout=60_000),
+        )
+
+    def _generate_text(self, prompt: str, model_name: Optional[str] = None, for_qa: bool = False) -> str:
+        from google.genai import types
+
+        model = model_name or self.model_name
+        try:
+            cfg_kwargs = {
+                "automatic_function_calling": types.AutomaticFunctionCallingConfig(disable=True),
+            }
+            if for_qa:
+                cfg_kwargs["temperature"] = 0.2
+                cfg_kwargs["max_output_tokens"] = 350
+            config = types.GenerateContentConfig(**cfg_kwargs)
+        except Exception:
+            config = types.GenerateContentConfig(temperature=0.2, max_output_tokens=350) if for_qa else None
+
+        kwargs = {"model": model, "contents": prompt}
+        if config is not None:
+            kwargs["config"] = config
+        response = self.client.models.generate_content(**kwargs)
+        return (getattr(response, "text", None) or "").strip()
 
     async def match_candidates(self, pairs: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         prompt = """You are a senior financial reconciliation auditor for a merchant using Razorpay.
@@ -136,9 +280,7 @@ Candidate Pairs to Evaluate:
         prompt += "\nOutput ONLY valid JSON array with the exact number of elements corresponding to the pairs above. No extra markdown fences if possible."
 
         try:
-            response = self.model.generate_content(prompt)
-            text = response.text.strip()
-            # Clean markdown codeblocks if wrapped in ```json ... ```
+            text = await asyncio.to_thread(self._generate_text, prompt)
             if text.startswith("```"):
                 text = re.sub(r"^```(?:json)?\n?", "", text)
                 text = re.sub(r"\n?```$", "", text)
@@ -148,63 +290,70 @@ Candidate Pairs to Evaluate:
         except Exception as e:
             logger.warning(f"Gemini API matching call failed or returned invalid format: {e}. Falling back to mock heuristic.")
 
-        # Fallback to mock logic if parse fails
         mock = MockLLMClient()
         return await mock.match_candidates(pairs)
 
-    async def answer_question(self, question: str, context: Dict[str, Any]) -> Dict[str, Any]:
-        prompt = f"""You are the AI Financial Controller and Settlement Assistant for 'reconnAIssance'.
-Answer the user's question about financial reconciliation, settlement shortfalls, fees, and audit logs using the provided context.
+    async def answer_question(
+        self,
+        question: str,
+        context: Dict[str, Any],
+        history: Optional[List[Dict[str, str]]] = None,
+    ) -> Dict[str, Any]:
+        if not question_in_product_scope(question):
+            return {"answer": OFF_TOPIC_REFUSAL, "cited_audit_log_ids": []}
 
-Context:
-Reconciliation Run ID: {context.get('run_id')}
-Summary Metrics: {json.dumps(context.get('metrics', {}))}
-Sample Audit Trail: {json.dumps(context.get('audit_logs', [])[:10])}
-Exceptions Sample: {json.dumps(context.get('exceptions', [])[:5])}
+        prompt = f"""{ASSISTANT_SYSTEM}
 
-User Question:
-"{question}"
+Run: {context.get('run_id')}
+Metrics: {json.dumps(context.get('metrics', {}))}
+Audit sample: {json.dumps(context.get('audit_logs', [])[:6])}
+Exceptions sample: {json.dumps(context.get('exceptions', [])[:4])}
+Recent chat:
+{_format_history(history[-6:] if history else None)}
 
-Instructions:
-- Provide an accurate, professional, financial controller explanation.
-- Explain fee deductions (2% MDR commission, 18% GST on fee, customer refunds, timing lags) where relevant.
-- Cite specific audit log IDs or transaction references whenever applicable.
-- Return a JSON object with:
-  "answer": "Your detailed explanation here (markdown supported)",
-  "cited_audit_log_ids": [list of integer IDs cited]
+Question: {question}
 """
         try:
-            response = self.model.generate_content(prompt)
-            text = response.text.strip()
-            if text.startswith("```"):
-                text = re.sub(r"^```(?:json)?\n?", "", text)
-                text = re.sub(r"\n?```$", "", text)
-            res = json.loads(text)
-            if "answer" in res:
-                return res
+            text = await asyncio.to_thread(
+                self._generate_text,
+                prompt,
+                "gemini-flash-lite-latest",
+                True,
+            )
+            parsed = _parse_qa_payload(text)
+            if parsed and parsed.get("answer"):
+                return parsed
         except Exception as e:
             logger.warning(f"Gemini API Q&A call failed: {e}. Falling back to mock assistant.")
 
         mock = MockLLMClient()
-        return await mock.answer_question(question, context)
+        return await mock.answer_question(question, context, history)
 
 
-def get_llm_client() -> LLMClient:
-    """Factory to instantiate the appropriate LLM client."""
-    mode = settings.LLM_MODE
+def get_llm_client(purpose: str = "qa") -> LLMClient:
+    """Factory to instantiate the appropriate LLM client.
+
+    purpose='qa' uses Gemini when a key is configured.
+    purpose='match' defaults to the local heuristic (fast). Set LLM_MATCH_MODE=live to call Gemini.
+    """
     key = settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")
 
-    if mode == "mock":
+    if purpose == "match":
+        if settings.LLM_MATCH_MODE == "live" and key:
+            try:
+                return GeminiClient(api_key=key, model_name=settings.GEMINI_MODEL)
+            except Exception:
+                return MockLLMClient()
         return MockLLMClient()
 
+    mode = settings.LLM_MODE
+    if mode == "mock":
+        return MockLLMClient()
     if mode == "live" and key:
         return GeminiClient(api_key=key, model_name=settings.GEMINI_MODEL)
-
-    # mode == "auto"
     if key:
         try:
             return GeminiClient(api_key=key, model_name=settings.GEMINI_MODEL)
         except Exception:
             return MockLLMClient()
-
     return MockLLMClient()
