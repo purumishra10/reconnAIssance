@@ -3,6 +3,7 @@ uvicorn[standard]>=0.30.0
 sqlmodel>=0.0.19
 sqlalchemy>=2.0.30
 rapidfuzz>=3.9.0
+google-genai>=1.0.0
 google-generativeai>=0.7.0
 pydantic>=2.7.0
 pydantic-settings>=2.2.0
