@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
 import { MessageSquareText, Send, Bot, User, Sparkles, Tag, HelpCircle } from 'lucide-react';
 
@@ -61,13 +61,20 @@ export function ChatPanel({ runId }) {
     {
       role: 'assistant',
       content:
-        "Hello! I am your **reconnAIssance Settlement Assistant**. Ask me anything regarding settlement shortfalls, fee deductions (2% MDR + 18% GST), batch payout timing (T+2), or audit log reasons for this reconciliation run.",
+        "Hi — I'm the **reconnAIssance assistant**. I only answer questions about this app: the 3-tier matching pipeline, Razorpay fees (2% MDR + 18% GST), T+2 settlements, and this run's metrics, matches, exceptions, and audit trail.",
       cited_audit_log_ids: [],
     },
   ]);
   const [inputQuestion, setInputQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [sessionId, setSessionId] = useState(null);
+  const [llmLive, setLlmLive] = useState(null);
+
+  useEffect(() => {
+    api.getHealth()
+      .then((h) => setLlmLive(Boolean(h.gemini_configured) && h.llm_mode !== 'mock'))
+      .catch(() => setLlmLive(false));
+  }, []);
 
   const suggestedQuestions = [
     'Why did settlement batch STL-1001 fall short of gross sales?',
@@ -93,6 +100,7 @@ export function ChatPanel({ runId }) {
       });
 
       if (res.session_id) setSessionId(res.session_id);
+      if (typeof res.llm_live === 'boolean') setLlmLive(res.llm_live);
 
       const botMsg = {
         role: 'assistant',
@@ -136,12 +144,12 @@ export function ChatPanel({ runId }) {
           <div>
             <h3 style={{ fontSize: '1.05rem', fontWeight: '700' }}>Settlement Q&A Agent</h3>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              Operational financial assistant answering queries backed by cited audit trail entries
+              General questions about this app and the current reconciliation run
             </p>
           </div>
         </div>
-        <span className="badge badge-ai" style={{ fontSize: '0.7rem' }}>
-          Gemini 2.0 Flash
+        <span className={`badge ${llmLive ? 'badge-ai' : 'badge-exc'}`} style={{ fontSize: '0.7rem' }}>
+          {llmLive ? 'Gemini live' : 'Offline mock'}
         </span>
       </div>
 
@@ -273,7 +281,7 @@ export function ChatPanel({ runId }) {
         <input
           type="text"
           className="input-field"
-          placeholder="Ask a question regarding settlement batches, deductions, or recon metrics..."
+          placeholder="Ask about this run, fees, matches, exceptions, or how reconnAIssance works..."
           value={inputQuestion}
           onChange={(e) => setInputQuestion(e.target.value)}
           onKeyDown={(e) => {
