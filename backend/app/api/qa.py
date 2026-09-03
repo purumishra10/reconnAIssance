@@ -1,10 +1,12 @@
 import json
+import os
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlmodel import Session, select
 
+from ..core.config import settings
 from ..core.database import get_session
 from ..models.schemas import (
     ReconciliationRun,
@@ -13,7 +15,7 @@ from ..models.schemas import (
     QASession,
     QAMessage,
 )
-from ..services.llm_client import get_llm_client
+from ..services.llm_client import get_llm_client, question_in_product_scope, OFF_TOPIC_REFUSAL
 
 router = APIRouter(prefix="/qa", tags=["Settlement Q&A"])
 
@@ -29,6 +31,7 @@ class QAAskResponse(BaseModel):
     question: str
     answer: str
     cited_audit_log_ids: List[int]
+    llm_live: bool = False
 
 
 @router.post("/ask", response_model=QAAskResponse)
@@ -55,13 +58,33 @@ async def ask_settlement_question(
         session.add(qa_sess)
         session.commit()
 
+    if not question_in_product_scope(req.question):
+        if not session_id:
+            session_id = f"sess_{uuid.uuid4().hex[:10]}"
+            session.add(QASession(id=session_id, run_id=req.run_id))
+            session.commit()
+        answer = OFF_TOPIC_REFUSAL
+        session.add_all([
+            QAMessage(session_id=session_id, role="user", content=req.question),
+            QAMessage(session_id=session_id, role="assistant", content=answer, cited_audit_log_ids_json="[]"),
+        ])
+        session.commit()
+        live = bool(settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")) and settings.LLM_MODE != "mock"
+        return QAAskResponse(
+            session_id=session_id,
+            question=req.question,
+            answer=answer,
+            cited_audit_log_ids=[],
+            llm_live=live,
+        )
+
     # 2. Retrieve relevant context from DB
     audit_logs = session.exec(
-        select(AuditLog).where(AuditLog.run_id == req.run_id).limit(25)
+        select(AuditLog).where(AuditLog.run_id == req.run_id).limit(8)
     ).all()
 
     exceptions = session.exec(
-        select(ReconciliationException).where(ReconciliationException.run_id == req.run_id).limit(10)
+        select(ReconciliationException).where(ReconciliationException.run_id == req.run_id).limit(5)
     ).all()
 
     context = {
@@ -78,7 +101,13 @@ async def ask_settlement_question(
             "exception_count": run.exception_count,
         },
         "audit_logs": [
-            {"id": a.id, "tier": a.tier, "action": a.action, "reason": a.reason, "confidence": a.confidence}
+            {
+                "id": a.id,
+                "tier": a.tier,
+                "action": a.action,
+                "reason": (a.reason or "")[:180],
+                "confidence": a.confidence,
+            }
             for a in audit_logs
         ],
         "exceptions": [
@@ -87,9 +116,15 @@ async def ask_settlement_question(
         ],
     }
 
-    # 3. Call LLM Client
+    history_rows = session.exec(
+        select(QAMessage)
+        .where(QAMessage.session_id == session_id)
+        .order_by(QAMessage.id.asc())
+    ).all()
+    history = [{"role": m.role, "content": m.content} for m in history_rows[-6:]]
+
     llm_client = get_llm_client()
-    qa_result = await llm_client.answer_question(req.question, context)
+    qa_result = await llm_client.answer_question(req.question, context, history)
 
     answer = qa_result.get("answer", "No answer generated.")
     cited_ids = qa_result.get("cited_audit_log_ids", [])
@@ -109,11 +144,14 @@ async def ask_settlement_question(
     session.add_all([msg_user, msg_bot])
     session.commit()
 
+    live = bool(settings.GEMINI_API_KEY or os.environ.get("GEMINI_API_KEY")) and settings.LLM_MODE != "mock"
+
     return QAAskResponse(
         session_id=session_id,
         question=req.question,
         answer=answer,
         cited_audit_log_ids=cited_ids,
+        llm_live=live,
     )
 
 
