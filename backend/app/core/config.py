@@ -14,7 +14,9 @@ class Settings(BaseSettings):
     GEMINI_API_KEY: Optional[str] = None
     DATABASE_URL: str = "sqlite:///./reconnaissance.db"
     LLM_MODE: Literal["live", "mock", "auto"] = "auto"
-    GEMINI_MODEL: str = "gemini-2.0-flash"
+    # Tier-3 matching: mock is local/fast. Set live only if you want Gemini on every unmatched pair.
+    LLM_MATCH_MODE: Literal["live", "mock"] = "mock"
+    GEMINI_MODEL: str = "gemini-3.6-flash"
 
     # Default generator settings
     DEFAULT_SEED: int = 42
