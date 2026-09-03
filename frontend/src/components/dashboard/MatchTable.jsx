@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { Search, ChevronDown, ChevronRight, CheckCircle2, ShieldAlert, ArrowRight, ExternalLink } from 'lucide-react';
+import { Search, ChevronDown, ChevronRight } from 'lucide-react';
 
-export function MatchTable({ runId }) {
+export function MatchTable({ runId, collapsible = false, defaultCollapsed = false }) {
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [tierFilter, setTierFilter] = useState('');
@@ -10,13 +10,15 @@ export function MatchTable({ runId }) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [expandedGroupId, setExpandedGroupId] = useState(null);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   const pageSize = 20;
 
   useEffect(() => {
     if (!runId) return;
+    if (collapsible && collapsed) return;
     loadMatches();
-  }, [runId, tierFilter, page]);
+  }, [runId, tierFilter, page, collapsed, collapsible]);
 
   const loadMatches = async () => {
     setLoading(true);
@@ -58,15 +60,37 @@ export function MatchTable({ runId }) {
 
   return (
     <div className="glass-panel" style={{ padding: '1.25rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Matched Groups & 3-Way Reconciliations</h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Successfully paired records across Merchant Sales Ledger, Razorpay Settlement Reports, and Bank Credits
-          </p>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: collapsed ? 0 : '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <button
+          type="button"
+          onClick={() => collapsible && setCollapsed((v) => !v)}
+          aria-expanded={collapsible ? !collapsed : true}
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.55rem',
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: collapsible ? 'pointer' : 'default',
+            textAlign: 'left',
+            color: 'inherit',
+          }}
+        >
+          {collapsible && (
+            collapsed ? <ChevronRight size={18} color="var(--text-muted)" style={{ marginTop: '2px' }} /> : <ChevronDown size={18} color="var(--accent-cyan)" style={{ marginTop: '2px' }} />
+          )}
+          <div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Matched Groups & 3-Way Reconciliations</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {collapsed
+                ? `${total} paired groups across ledger, Razorpay settlements, and bank credits — expand to inspect`
+                : 'Successfully paired records across Merchant Sales Ledger, Razorpay Settlement Reports, and Bank Credits'}
+            </p>
+          </div>
+        </button>
 
-        {/* Filter Controls */}
+        {!collapsed && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           {/* Search */}
           <div style={{ position: 'relative', width: '200px' }}>
@@ -97,9 +121,11 @@ export function MatchTable({ runId }) {
             <option value="ai_assisted">Tier 3: AI</option>
           </select>
         </div>
+        )}
       </div>
 
-      {/* Table */}
+      {collapsed ? null : (
+      <>
       <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
         <table className="data-table">
           <thead>
@@ -258,6 +284,8 @@ export function MatchTable({ runId }) {
           </button>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

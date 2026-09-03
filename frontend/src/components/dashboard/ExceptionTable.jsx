@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { Search, Download, AlertTriangle, HelpCircle, FileSpreadsheet } from 'lucide-react';
+import { Search, Download, ChevronDown, ChevronRight } from 'lucide-react';
 
-export function ExceptionTable({ runId }) {
+export function ExceptionTable({ runId, collapsible = false, defaultCollapsed = false }) {
   const [exceptions, setExceptions] = useState([]);
   const [loading, setLoading] = useState(false);
   const [reasonFilter, setReasonFilter] = useState('');
@@ -10,13 +10,15 @@ export function ExceptionTable({ runId }) {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [collapsed, setCollapsed] = useState(defaultCollapsed);
 
   const pageSize = 20;
 
   useEffect(() => {
     if (!runId) return;
+    if (collapsible && collapsed) return;
     loadExceptions();
-  }, [runId, reasonFilter, page]);
+  }, [runId, reasonFilter, page, collapsed, collapsible]);
 
   const loadExceptions = async () => {
     setLoading(true);
@@ -79,15 +81,37 @@ export function ExceptionTable({ runId }) {
 
   return (
     <div className="glass-panel" style={{ padding: '1.25rem' }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-        <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Honest Exception List & Noise Diagnostics</h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Unresolved discrepancies categorized with actionable reasons for finance operations teams
-          </p>
-        </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: collapsed ? 0 : '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+        <button
+          type="button"
+          onClick={() => collapsible && setCollapsed((v) => !v)}
+          aria-expanded={collapsible ? !collapsed : true}
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.55rem',
+            background: 'none',
+            border: 'none',
+            padding: 0,
+            cursor: collapsible ? 'pointer' : 'default',
+            textAlign: 'left',
+            color: 'inherit',
+          }}
+        >
+          {collapsible && (
+            collapsed ? <ChevronRight size={18} color="var(--text-muted)" style={{ marginTop: '2px' }} /> : <ChevronDown size={18} color="var(--accent-cyan)" style={{ marginTop: '2px' }} />
+          )}
+          <div>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Honest Exception List & Noise Diagnostics</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {collapsed
+                ? `${total} unresolved discrepancies — expand or open the Exception List section`
+                : 'Unresolved discrepancies categorized with actionable reasons for finance operations teams'}
+            </p>
+          </div>
+        </button>
 
-        {/* Action Controls */}
+        {!collapsed && (
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
           {/* Search */}
           <div style={{ position: 'relative', width: '200px' }}>
@@ -129,9 +153,11 @@ export function ExceptionTable({ runId }) {
             {exporting ? 'Exporting...' : 'Export CSV (FR-9)'}
           </button>
         </div>
+        )}
       </div>
 
-      {/* Table */}
+      {collapsed ? null : (
+      <>
       <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--border-subtle)' }}>
         <table className="data-table">
           <thead>
@@ -214,6 +240,8 @@ export function ExceptionTable({ runId }) {
           </button>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
