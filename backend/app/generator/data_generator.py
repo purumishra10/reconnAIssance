@@ -4,7 +4,7 @@ import random
 import uuid
 from datetime import date, timedelta
 from typing import Dict, Any, List, Tuple
-from sqlmodel import Session, select, delete
+from sqlmodel import Session, select, delete, func
 
 from ..models.schemas import RawLedgerRow, RawSettlementRow, RawBankRow
 from .noise_injector import (
@@ -31,6 +31,53 @@ class SyntheticDataGenerator:
 
     def generate(self, session: Session) -> Dict[str, Any]:
         """Generate synthetic ledger, settlement, and bank datasets with injected noise and ground truth."""
+        existing = session.exec(
+            select(func.count(RawLedgerRow.id)).where(
+                RawLedgerRow.dataset_version == self.dataset_version
+            )
+        ).one()
+        if existing:
+            gt_path = os.path.join(
+                os.path.dirname(__file__), "..", "..", "data", "ground_truth",
+                f"{self.dataset_version}_ground_truth.json",
+            )
+            ledger_count = existing
+            settlement_count = session.exec(
+                select(func.count(RawSettlementRow.id)).where(
+                    RawSettlementRow.dataset_version == self.dataset_version
+                )
+            ).one()
+            bank_count = session.exec(
+                select(func.count(RawBankRow.id)).where(
+                    RawBankRow.dataset_version == self.dataset_version
+                )
+            ).one()
+            tuning_count = session.exec(
+                select(func.count(RawLedgerRow.id)).where(
+                    RawLedgerRow.dataset_version == self.dataset_version,
+                    RawLedgerRow.dataset_split == "tuning",
+                )
+            ).one()
+            holdout_count = session.exec(
+                select(func.count(RawLedgerRow.id)).where(
+                    RawLedgerRow.dataset_version == self.dataset_version,
+                    RawLedgerRow.dataset_split == "holdout",
+                )
+            ).one()
+            return {
+                "dataset_version": self.dataset_version,
+                "seed": self.seed,
+                "record_count": ledger_count,
+                "tuning_count": tuning_count,
+                "holdout_count": holdout_count,
+                "ledger_count": ledger_count,
+                "settlement_count": settlement_count,
+                "bank_count": bank_count,
+                "batches_count": 0,
+                "ground_truth_path": gt_path,
+                "reused": True,
+            }
+
         # 1. Clean existing records for this version if re-generating
         session.exec(
             delete(RawLedgerRow).where(RawLedgerRow.dataset_version == self.dataset_version)
