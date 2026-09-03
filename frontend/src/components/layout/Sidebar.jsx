@@ -1,9 +1,11 @@
 import React from 'react';
-import { LayoutDashboard, PlayCircle, MessageSquareText, FileSearch } from 'lucide-react';
+import { LayoutDashboard, PlayCircle, MessageSquareText, FileSearch, GitMerge, AlertTriangle } from 'lucide-react';
 
 export function Sidebar({ activeTab, onSelectTab }) {
   const navItems = [
     { id: 'dashboard', label: 'Overview & Metrics', icon: LayoutDashboard },
+    { id: 'matches', label: 'Matched Groups', icon: GitMerge },
+    { id: 'exceptions', label: 'Exception List', icon: AlertTriangle },
     { id: 'reconcile', label: 'Run Reconciliation', icon: PlayCircle },
     { id: 'qa', label: 'Settlement Q&A', icon: MessageSquareText },
     { id: 'audit', label: 'Audit Trail', icon: FileSearch },

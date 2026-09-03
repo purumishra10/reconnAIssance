@@ -25,14 +25,9 @@ export function Header({ runs, currentRunId, onSelectRun, onRefresh, isRefreshin
             <Sparkles size={20} color="#ffffff" />
           </div>
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <h1 style={{ fontSize: '1.25rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
-                reconn<span style={{ color: 'var(--accent-cyan)' }}>AI</span>ssance
-              </h1>
-              <span className="badge badge-ai" style={{ fontSize: '0.65rem' }}>
-                Track 04 · Razorpay
-              </span>
-            </div>
+            <h1 style={{ fontSize: '1.25rem', fontWeight: '800', letterSpacing: '-0.02em' }}>
+              reconn<span style={{ color: 'var(--accent-cyan)' }}>AI</span>ssance
+            </h1>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
               Multi-Source Financial Reconciliation Agent & Settlement Controller
             </p>
