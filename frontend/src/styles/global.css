@@ -223,6 +223,19 @@ code, pre, .font-mono {
   background: var(--text-muted);
 }
 
+/* Donut / pie chart labels follow theme (SVG uses fill, not color) */
+.recharts-text,
+.recharts-label {
+  fill: var(--text-primary);
+}
+
+.recharts-wrapper *:focus,
+.recharts-wrapper *:focus-visible,
+.recharts-pie-sector,
+.recharts-sector {
+  outline: none !important;
+}
+
 /* Toast notification slide-in animation */
 @keyframes slideInRight {
   from {
