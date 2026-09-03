@@ -1,33 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { api } from '../../services/api';
-import { Play, Sparkles, Database, CheckCircle, RefreshCw, Layers, ShieldCheck } from 'lucide-react';
+import React from 'react';
+import { Play, Sparkles, RefreshCw, Layers } from 'lucide-react';
 
-const MAX_POLL_ITERATIONS = 120; // 2 minutes at 1s interval
+export function RunForm({ cycle, form, onFormChange, onLaunch }) {
+  const { selectedPreset, seed, recordCount, splitRatio, targetSplit } = form;
 
-export function RunForm({ onRunCompleted, onSelectRun }) {
-  const [selectedPreset, setSelectedPreset] = useState('demo');
-  const [seed, setSeed] = useState(42);
-  const [recordCount, setRecordCount] = useState(2000);
-  const [splitRatio, setSplitRatio] = useState(0.8);
-  const [targetSplit, setTargetSplit] = useState('holdout');
+  const updateForm = (patch) => {
+    onFormChange((prev) => ({ ...prev, ...patch }));
+  };
 
-  const [generating, setGenerating] = useState(false);
-  const [running, setRunning] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('');
-  const [datasetVersion, setDatasetVersion] = useState('ds_2000_seed42');
-
-  const pollIntervalRef = useRef(null);
-  const pollCountRef = useRef(0);
-
-  // Cleanup polling on unmount
-  useEffect(() => {
-    return () => {
-      if (pollIntervalRef.current) {
-        clearInterval(pollIntervalRef.current);
-        pollIntervalRef.current = null;
-      }
-    };
-  }, []);
+  const generating = cycle?.generating;
+  const running = cycle?.running;
+  const statusMessage = cycle?.statusMessage || '';
+  const hasResult = Boolean(cycle?.summary);
+  const busy = generating || running;
 
   const presets = [
     {
@@ -54,74 +39,17 @@ export function RunForm({ onRunCompleted, onSelectRun }) {
   ];
 
   const handleApplyPreset = (preset) => {
-    setSelectedPreset(preset.id);
-    setRecordCount(preset.count);
-    setSeed(preset.seed);
-    setDatasetVersion(`ds_${preset.count}_seed${preset.seed}`);
+    updateForm({
+      selectedPreset: preset.id,
+      recordCount: preset.count,
+      seed: preset.seed,
+    });
   };
 
-  const handleGenerateAndRun = async () => {
-    setGenerating(true);
-    setStatusMessage('1/2 Generating synthetic dataset with 9 financial noise patterns...');
-    try {
-      // 1. Generate Dataset
-      const genRes = await api.generateDataset({
-        seed: Number(seed),
-        record_count: Number(recordCount),
-        split_ratio: Number(splitRatio),
-      });
-
-      const dsVer = genRes.dataset_version;
-      setDatasetVersion(dsVer);
-
-      // 2. Start Reconciliation Pipeline
-      setGenerating(false);
-      setRunning(true);
-      setStatusMessage(`2/2 Executing 3-tier reconciliation on ${targetSplit} split...`);
-
-      const runRes = await api.startReconcileRun({
-        dataset_version: dsVer,
-        split: targetSplit,
-      });
-
-      const runId = runRes.run_id;
-
-      // 3. Poll for completion with max-poll guard and proper cleanup
-      pollCountRef.current = 0;
-      pollIntervalRef.current = setInterval(async () => {
-        pollCountRef.current += 1;
-
-        if (pollCountRef.current >= MAX_POLL_ITERATIONS) {
-          clearInterval(pollIntervalRef.current);
-          pollIntervalRef.current = null;
-          setRunning(false);
-          setStatusMessage('Run timed out after 2 minutes. Check the dashboard for status.');
-          return;
-        }
-
-        try {
-          const summary = await api.getRunSummary(runId);
-          if (summary.status === 'completed') {
-            clearInterval(pollIntervalRef.current);
-            pollIntervalRef.current = null;
-            setRunning(false);
-            setStatusMessage(`Reconciliation completed successfully! Match rate: ${(summary.match_rate * 100).toFixed(1)}%`);
-            if (onRunCompleted) onRunCompleted(runId);
-            if (onSelectRun) onSelectRun(runId);
-          } else if (summary.status === 'failed') {
-            clearInterval(pollIntervalRef.current);
-            pollIntervalRef.current = null;
-            setRunning(false);
-            setStatusMessage(`Run failed: ${summary.error_message}`);
-          }
-        } catch (pollErr) {
-          console.error('Polling error:', pollErr);
-        }
-      }, 1000);
-    } catch (err) {
-      setGenerating(false);
-      setRunning(false);
-      setStatusMessage(`Error: ${err.message}`);
+  const handleGenerateAndRun = () => {
+    if (busy) return;
+    if (onLaunch) {
+      onLaunch({ seed, recordCount, splitRatio, targetSplit });
     }
   };
 
@@ -182,7 +110,7 @@ export function RunForm({ onRunCompleted, onSelectRun }) {
                 className="input-field"
                 style={{ marginTop: '0.25rem' }}
                 value={seed}
-                onChange={(e) => setSeed(Number(e.target.value))}
+                onChange={(e) => updateForm({ seed: Number(e.target.value) })}
               />
             </div>
             <div>
@@ -193,7 +121,7 @@ export function RunForm({ onRunCompleted, onSelectRun }) {
                 className="input-field"
                 style={{ marginTop: '0.25rem' }}
                 value={targetSplit}
-                onChange={(e) => setTargetSplit(e.target.value)}
+                onChange={(e) => updateForm({ targetSplit: e.target.value })}
               >
                 <option value="holdout">Held-out Split (20% test)</option>
                 <option value="tuning">Tuning Split (80% dev)</option>
@@ -221,12 +149,23 @@ export function RunForm({ onRunCompleted, onSelectRun }) {
           <button
             className="btn btn-primary"
             style={{ width: '100%', padding: '0.75rem' }}
-            disabled={generating || running}
+            disabled={busy}
             onClick={handleGenerateAndRun}
           >
-            <Play size={16} />
-            {generating ? 'Generating Data...' : running ? 'Reconciling Records...' : 'Generate & Launch Reconciliation'}
+            {hasResult && !busy ? <RefreshCw size={16} /> : <Play size={16} />}
+            {generating
+              ? 'Generating Data...'
+              : running
+                ? 'Reconciling Records...'
+                : hasResult
+                  ? 'Rerun cycle'
+                  : 'Generate & Launch Reconciliation'}
           </button>
+          {hasResult && !busy && (
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.55rem', textAlign: 'center' }}>
+              Results stay until you rerun. Rerun generates a new dataset and replaces this cycle.
+            </p>
+          )}
         </div>
       </div>
     </div>

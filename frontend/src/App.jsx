@@ -70,9 +70,31 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [toasts, setToasts] = useState([]);
+  const [cycle, setCycle] = useState({
+    generating: false,
+    running: false,
+    statusMessage: '',
+    summary: null,
+  });
+  const [reconcileForm, setReconcileForm] = useState({
+    selectedPreset: 'demo',
+    seed: 42,
+    recordCount: 2000,
+    splitRatio: 0.8,
+    targetSplit: 'holdout',
+  });
 
   const pollIntervalRef = useRef(null);
   const pollCountRef = useRef(0);
+  const cyclePollRef = useRef(null);
+  const cyclePollCountRef = useRef(0);
+
+  const stopCyclePoll = () => {
+    if (cyclePollRef.current) {
+      clearInterval(cyclePollRef.current);
+      cyclePollRef.current = null;
+    }
+  };
 
   // Cleanup polling on unmount
   useEffect(() => {
@@ -80,6 +102,10 @@ export function App() {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
+      }
+      if (cyclePollRef.current) {
+        clearInterval(cyclePollRef.current);
+        cyclePollRef.current = null;
       }
     };
   }, []);
@@ -190,7 +216,85 @@ export function App() {
     const res = await api.listRuns();
     setRuns(res.results || []);
     setCurrentRunId(runId);
-    setActiveTab('dashboard');
+  };
+
+  const launchReconcileCycle = async ({ seed, recordCount, splitRatio, targetSplit }) => {
+    stopCyclePoll();
+    setCycle({
+      generating: true,
+      running: false,
+      statusMessage: '1/2 Generating synthetic dataset with 9 financial noise patterns...',
+      summary: null,
+    });
+
+    try {
+      const genRes = await api.generateDataset({
+        seed: Number(seed),
+        record_count: Number(recordCount),
+        split_ratio: Number(splitRatio),
+      });
+
+      setCycle((prev) => ({
+        ...prev,
+        generating: false,
+        running: true,
+        statusMessage: `2/2 Executing 3-tier reconciliation on ${targetSplit} split...`,
+      }));
+
+      const runRes = await api.startReconcileRun({
+        dataset_version: genRes.dataset_version,
+        split: targetSplit,
+      });
+      const runId = runRes.run_id;
+
+      cyclePollCountRef.current = 0;
+      cyclePollRef.current = setInterval(async () => {
+        cyclePollCountRef.current += 1;
+
+        if (cyclePollCountRef.current >= MAX_POLL_ITERATIONS) {
+          stopCyclePoll();
+          setCycle((prev) => ({
+            ...prev,
+            generating: false,
+            running: false,
+            statusMessage: 'Run timed out after 2 minutes. Check the dashboard for status.',
+          }));
+          return;
+        }
+
+        try {
+          const sum = await api.getRunSummary(runId);
+          if (sum.status === 'completed') {
+            stopCyclePoll();
+            setCycle({
+              generating: false,
+              running: false,
+              statusMessage: `Reconciliation completed successfully! Match rate: ${((sum.match_rate || 0) * 100).toFixed(1)}%`,
+              summary: sum,
+            });
+            await handleRunCompleted(runId);
+          } else if (sum.status === 'failed') {
+            stopCyclePoll();
+            setCycle({
+              generating: false,
+              running: false,
+              statusMessage: `Run failed: ${sum.error_message || 'Unknown error'}`,
+              summary: null,
+            });
+          }
+        } catch (pollErr) {
+          console.error('Polling error:', pollErr);
+        }
+      }, 1000);
+    } catch (err) {
+      stopCyclePoll();
+      setCycle({
+        generating: false,
+        running: false,
+        statusMessage: `Error: ${err.message}`,
+        summary: null,
+      });
+    }
   };
 
   return (
@@ -232,36 +336,46 @@ export function App() {
                   <MetricsRow summary={summary} />
                   <TierBreakdown summary={summary} />
                   <div style={{ marginBottom: '1.5rem' }}>
-                    <MatchTable runId={currentRunId} />
+                    <MatchTable runId={currentRunId} collapsible defaultCollapsed />
                   </div>
                   <div>
-                    <ExceptionTable runId={currentRunId} />
+                    <ExceptionTable runId={currentRunId} collapsible defaultCollapsed />
                   </div>
                 </div>
               )}
 
-              {/* Run Reconciliation Tab */}
-              {activeTab === 'reconcile' && (
+              {activeTab === 'matches' && (
                 <div>
-                  <RunForm
-                    onRunCompleted={handleRunCompleted}
-                    onSelectRun={(id) => setCurrentRunId(id)}
-                  />
-                  {summary && (
-                    <>
-                      <MetricsRow summary={summary} />
-                      <TierBreakdown summary={summary} />
-                    </>
-                  )}
+                  <MatchTable runId={currentRunId} />
                 </div>
               )}
 
-              {/* Settlement Q&A Tab */}
-              {activeTab === 'qa' && (
+              {activeTab === 'exceptions' && (
                 <div>
-                  <ChatPanel runId={currentRunId} />
+                  <ExceptionTable runId={currentRunId} />
                 </div>
               )}
+
+              {/* Run Reconciliation Tab — stay mounted so form + last-run results survive tab switches */}
+              <div style={{ display: activeTab === 'reconcile' ? 'block' : 'none' }}>
+                <RunForm
+                  cycle={cycle}
+                  form={reconcileForm}
+                  onFormChange={setReconcileForm}
+                  onLaunch={launchReconcileCycle}
+                />
+                {cycle.summary && (
+                  <>
+                    <MetricsRow summary={cycle.summary} />
+                    <TierBreakdown summary={cycle.summary} />
+                  </>
+                )}
+              </div>
+
+              {/* Settlement Q&A Tab */}
+              <div style={{ display: activeTab === 'qa' ? 'block' : 'none' }}>
+                <ChatPanel runId={currentRunId} />
+              </div>
 
               {/* Full Audit Trail Tab */}
               {activeTab === 'audit' && (
