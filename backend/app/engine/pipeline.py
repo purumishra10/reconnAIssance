@@ -1,3 +1,4 @@
+import time
 import logging
 import traceback
 from datetime import datetime, timezone
@@ -43,27 +44,32 @@ class ReconciliationPipeline:
             session.refresh(run)
 
         try:
-            # 2. Ingestion
+            t0 = time.perf_counter()
+
             ingest_engine = IngestionEngine(self.run_id, self.dataset_version, self.split)
             canonical_records = ingest_engine.ingest(session)
             total_records = len(canonical_records)
+            logger.info("Pipeline %s ingest: %s records in %.2fs", self.run_id, total_records, time.perf_counter() - t0)
 
             if total_records == 0:
                 raise ValueError(
                     f"No records found for dataset '{self.dataset_version}' with split '{self.split}'. Please generate data first."
                 )
 
-            # 3. Tier 1 - Exact Match
+            t1 = time.perf_counter()
             tier1 = Tier1ExactMatcher(self.run_id)
             exact_groups, remaining_after_tier1 = tier1.match(session, canonical_records)
+            logger.info("Pipeline %s tier1: %s matches, %.2fs", self.run_id, len(exact_groups), time.perf_counter() - t1)
 
-            # 4. Tier 2 - Fuzzy Match
+            t2 = time.perf_counter()
             tier2 = Tier2FuzzyMatcher(self.run_id)
             fuzzy_groups, remaining_after_tier2 = tier2.match(session, remaining_after_tier1)
+            logger.info("Pipeline %s tier2: %s matches, %.2fs", self.run_id, len(fuzzy_groups), time.perf_counter() - t2)
 
-            # 5. Tier 3 - AI-Assisted Match
+            t3 = time.perf_counter()
             tier3 = Tier3AIMatcher(self.run_id)
             ai_groups, remaining_after_tier3 = await tier3.match(session, remaining_after_tier2)
+            logger.info("Pipeline %s tier3: %s matches from %s remaining, %.2fs", self.run_id, len(ai_groups), len(remaining_after_tier2), time.perf_counter() - t3)
 
             # 6. Exception Classification
             classifier = ExceptionClassifier(self.run_id)
