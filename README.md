@@ -22,8 +22,6 @@ In real-world business operations, these three sources **almost never match clea
 
 Finance and operations analysts traditionally spend hours manually cross-referencing spreadsheets to pair rows by hand. **reconnAIssance** automates this end-to-end with high throughput, rigorous accuracy, and complete audit explainability.
 
-> [!NOTE]
-> **Learning Note**: This manual matching process is called **Reconciliation** (*recon*) across corporate finance. Every business receiving payments across multiple channels performs reconciliation to ensure financial integrity and prevent cash leakages.
 
 ---
 
