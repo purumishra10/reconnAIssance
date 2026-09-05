@@ -78,14 +78,14 @@ export function MatchTable({ runId, collapsible = false, defaultCollapsed = fals
           }}
         >
           {collapsible && (
-            collapsed ? <ChevronRight size={18} color="var(--text-muted)" style={{ marginTop: '2px' }} /> : <ChevronDown size={18} color="var(--accent-cyan)" style={{ marginTop: '2px' }} />
+            collapsed ? <ChevronRight size={18} color="var(--text-muted)" style={{ marginTop: '2px' }} /> : <ChevronDown size={18} color="var(--text-secondary)" style={{ marginTop: '2px' }} />
           )}
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Matched Groups & 3-Way Reconciliations</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '600' }}>Matched groups</h3>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               {collapsed
-                ? `${total} paired groups across ledger, Razorpay settlements, and bank credits — expand to inspect`
-                : 'Successfully paired records across Merchant Sales Ledger, Razorpay Settlement Reports, and Bank Credits'}
+                ? `${total} groups linking ledger, settlement, and bank lines`
+                : 'Ledger, Razorpay settlement, and bank credit lines grouped into one settlement event'}
             </p>
           </div>
         </button>
@@ -131,11 +131,11 @@ export function MatchTable({ runId, collapsible = false, defaultCollapsed = fals
           <thead>
             <tr>
               <th style={{ width: '40px' }}></th>
-              <th>Reference / Entities</th>
-              <th>Matching Tier</th>
+              <th>Reference</th>
+              <th>Tier</th>
               <th>Confidence</th>
-              <th>Resolution Reason & Fee Logic</th>
-              <th>Matched Date</th>
+              <th>Reason</th>
+              <th>Time</th>
             </tr>
           </thead>
           <tbody>
@@ -165,11 +165,11 @@ export function MatchTable({ runId, collapsible = false, defaultCollapsed = fals
                       onClick={() => setExpandedGroupId(isExpanded ? null : group.group_id)}
                     >
                       <td>
-                        {isExpanded ? <ChevronDown size={16} color="var(--accent-cyan)" /> : <ChevronRight size={16} color="var(--text-muted)" />}
+                        {isExpanded ? <ChevronDown size={16} color="var(--text-secondary)" /> : <ChevronRight size={16} color="var(--text-muted)" />}
                       </td>
                       <td>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
-                          <span style={{ fontWeight: '600', fontFamily: 'JetBrains Mono', fontSize: '0.85rem' }}>
+                          <span style={{ fontWeight: '600', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem' }}>
                             {ledgerMember?.normalized_ref?.toUpperCase() || group.group_id.slice(0, 10)}
                           </span>
                           <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
@@ -179,7 +179,7 @@ export function MatchTable({ runId, collapsible = false, defaultCollapsed = fals
                       </td>
                       <td>{getTierBadge(group.tier)}</td>
                       <td>
-                        <span style={{ fontWeight: '700', color: group.confidence >= 0.9 ? 'var(--accent-emerald)' : 'var(--accent-cyan)' }}>
+                        <span className="tabular" style={{ fontWeight: '600', color: group.confidence >= 0.9 ? 'var(--accent-emerald)' : 'var(--text-primary)' }}>
                           {(group.confidence * 100).toFixed(0)}%
                         </span>
                       </td>
@@ -196,8 +196,8 @@ export function MatchTable({ runId, collapsible = false, defaultCollapsed = fals
                       <tr>
                         <td colSpan={6} style={{ background: 'var(--bg-tertiary)', padding: '1rem 1.5rem' }}>
                           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <div style={{ fontSize: '0.75rem', fontWeight: '700', color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                              Multi-Source Linked Transaction Entries (Group: {group.group_id})
+                            <div style={{ fontSize: '0.68rem', fontWeight: '600', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                              Linked source lines · {group.group_id}
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
@@ -206,9 +206,9 @@ export function MatchTable({ runId, collapsible = false, defaultCollapsed = fals
                                 <div className="app-card" style={{ background: 'var(--bg-secondary)', padding: '0.75rem' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                                     <span className="badge badge-exact" style={{ fontSize: '0.65rem' }}>Sales Ledger</span>
-                                    <span style={{ fontWeight: '700', color: 'var(--accent-emerald)' }}>₹{ledgerMember.amount_rupees}</span>
+                                    <span className="tabular" style={{ fontWeight: '600', color: 'var(--text-primary)' }}>₹{ledgerMember.amount_rupees}</span>
                                   </div>
-                                  <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono' }}>{ledgerMember.normalized_ref}</div>
+                                  <div style={{ fontSize: '0.75rem', fontFamily: 'IBM Plex Mono, monospace' }}>{ledgerMember.normalized_ref}</div>
                                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                                     Date: {ledgerMember.event_date} · Method: {ledgerMember.details?.payment_method || 'online'}
                                   </div>
@@ -220,9 +220,9 @@ export function MatchTable({ runId, collapsible = false, defaultCollapsed = fals
                                 <div className="app-card" style={{ background: 'var(--bg-secondary)', padding: '0.75rem' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                                     <span className="badge badge-fuzzy" style={{ fontSize: '0.65rem' }}>Razorpay Payout</span>
-                                    <span style={{ fontWeight: '700', color: 'var(--accent-cyan)' }}>₹{settleMember.amount_rupees}</span>
+                                    <span className="tabular" style={{ fontWeight: '600', color: 'var(--text-primary)' }}>₹{settleMember.amount_rupees}</span>
                                   </div>
-                                  <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono' }}>{settleMember.normalized_ref}</div>
+                                  <div style={{ fontSize: '0.75rem', fontFamily: 'IBM Plex Mono, monospace' }}>{settleMember.normalized_ref}</div>
                                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                                     Batch: {settleMember.batch_id} · Net (after 2% fee + 18% GST)
                                   </div>
@@ -234,9 +234,9 @@ export function MatchTable({ runId, collapsible = false, defaultCollapsed = fals
                                 <div className="app-card" style={{ background: 'var(--bg-secondary)', padding: '0.75rem' }}>
                                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.35rem' }}>
                                     <span className="badge badge-ai" style={{ fontSize: '0.65rem' }}>Bank Credit</span>
-                                    <span style={{ fontWeight: '700', color: 'var(--accent-indigo)' }}>₹{bankMember.amount_rupees}</span>
+                                    <span className="tabular" style={{ fontWeight: '600', color: 'var(--text-primary)' }}>₹{bankMember.amount_rupees}</span>
                                   </div>
-                                  <div style={{ fontSize: '0.75rem', fontFamily: 'JetBrains Mono' }}>{bankMember.normalized_ref}</div>
+                                  <div style={{ fontSize: '0.75rem', fontFamily: 'IBM Plex Mono, monospace' }}>{bankMember.normalized_ref}</div>
                                   <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>
                                     Narration: {bankMember.details?.narration || 'Settlement credit batch'}
                                   </div>

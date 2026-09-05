@@ -1,5 +1,5 @@
 import React from 'react';
-import { Target, CheckCircle2, Zap, AlertTriangle, Database } from 'lucide-react';
+import { Target, CheckCircle2, Gauge, AlertTriangle } from 'lucide-react';
 
 export function MetricsRow({ summary }) {
   if (!summary) return null;
@@ -13,44 +13,40 @@ export function MetricsRow({ summary }) {
 
   const metrics = [
     {
-      title: 'Match Rate',
+      title: 'Match rate',
       value: `${matchRatePct}%`,
       subtitle: `${totalRecords - exceptionCount} / ${totalRecords} resolved`,
       icon: CheckCircle2,
       color: 'var(--accent-emerald)',
-      glow: 'rgba(16, 185, 129, 0.15)',
     },
     {
-      title: 'Precision (Held-out)',
+      title: 'Precision',
       value: `${precisionPct}%`,
-      subtitle: 'True matches / System matches',
-      icon: Target,
-      color: 'var(--accent-cyan)',
-      glow: 'rgba(6, 182, 212, 0.15)',
-    },
-    {
-      title: 'Recall (Held-out)',
-      value: `${recallPct}%`,
-      subtitle: 'Found / Expected matches',
+      subtitle: 'Held-out true matches / system matches',
       icon: Target,
       color: 'var(--accent-blue)',
-      glow: 'rgba(59, 130, 246, 0.15)',
+    },
+    {
+      title: 'Recall',
+      value: `${recallPct}%`,
+      subtitle: 'Held-out found / expected matches',
+      icon: Target,
+      color: 'var(--accent-blue)',
     },
     {
       title: 'Throughput',
-      value: `${throughputRps} rps`,
-      subtitle: 'End-to-end multi-tier pipeline',
-      icon: Zap,
+      value: `${throughputRps}`,
+      suffix: ' rps',
+      subtitle: 'End-to-end pipeline',
+      icon: Gauge,
       color: 'var(--accent-amber)',
-      glow: 'rgba(245, 158, 11, 0.15)',
     },
     {
-      title: 'Exceptions Flagged',
+      title: 'Exceptions',
       value: exceptionCount,
-      subtitle: 'Inspectable noise/unmatched',
+      subtitle: 'Unresolved after all tiers',
       icon: AlertTriangle,
       color: 'var(--accent-rose)',
-      glow: 'rgba(244, 63, 94, 0.15)',
     },
   ];
 
@@ -58,66 +54,35 @@ export function MetricsRow({ summary }) {
     <div
       style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '1rem',
-        marginBottom: '1.5rem',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+        gap: '0.75rem',
+        marginBottom: '1.15rem',
       }}
     >
-      {metrics.map((m, idx) => {
+      {metrics.map((m) => {
         const Icon = m.icon;
         return (
           <div
-            key={idx}
-            className="app-card animate-fade-in"
+            key={m.title}
+            className="app-card"
             style={{
               display: 'flex',
               flexDirection: 'column',
-              justifyContent: 'space-between',
-              position: 'relative',
-              overflow: 'hidden',
+              padding: '0.9rem 1rem',
+              borderLeft: `3px solid ${m.color}`,
             }}
           >
-            {/* Subtle glow border */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
-                height: '3px',
-                background: m.color,
-                boxShadow: `0 0 10px ${m.color}`,
-              }}
-            />
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-              <span style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.55rem' }}>
+              <span style={{ fontSize: '0.68rem', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {m.title}
               </span>
-              <div
-                style={{
-                  width: '30px',
-                  height: '30px',
-                  borderRadius: '8px',
-                  background: m.glow,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: m.color,
-                }}
-              >
-                <Icon size={16} />
-              </div>
+              <Icon size={15} color={m.color} strokeWidth={1.75} />
             </div>
-
-            <div>
-              <div style={{ fontSize: '1.75rem', fontWeight: '800', fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: '1.1' }}>
-                {m.value}
-              </div>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.35rem' }}>
-                {m.subtitle}
-              </div>
+            <div className="tabular" style={{ fontSize: '1.45rem', fontWeight: '600', lineHeight: 1.15, letterSpacing: '-0.02em' }}>
+              {m.value}
+              {m.suffix && <span style={{ fontSize: '0.8rem', fontWeight: 500, color: 'var(--text-muted)' }}>{m.suffix}</span>}
             </div>
+            <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.3rem' }}>{m.subtitle}</div>
           </div>
         );
       })}

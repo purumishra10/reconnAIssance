@@ -69,7 +69,7 @@ export function ExceptionTable({ runId, collapsible = false, defaultCollapsed = 
   const getReasonBadge = (code) => {
     switch (code) {
       case 'AMOUNT_MISMATCH':
-        return <span className="badge badge-exc" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b' }}>Amount Mismatch</span>;
+        return <span className="badge badge-exc" style={{ background: 'var(--badge-fuzzy-bg)', color: 'var(--accent-amber)' }}>Amount mismatch</span>;
       case 'DUPLICATE_SUSPECTED':
         return <span className="badge badge-ai">Duplicate Row</span>;
       case 'NO_COUNTERPART_FOUND':
@@ -99,14 +99,14 @@ export function ExceptionTable({ runId, collapsible = false, defaultCollapsed = 
           }}
         >
           {collapsible && (
-            collapsed ? <ChevronRight size={18} color="var(--text-muted)" style={{ marginTop: '2px' }} /> : <ChevronDown size={18} color="var(--accent-cyan)" style={{ marginTop: '2px' }} />
+            collapsed ? <ChevronRight size={18} color="var(--text-muted)" style={{ marginTop: '2px' }} /> : <ChevronDown size={18} color="var(--text-secondary)" style={{ marginTop: '2px' }} />
           )}
           <div>
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Honest Exception List & Noise Diagnostics</h3>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '600' }}>Exception list</h3>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
               {collapsed
-                ? `${total} unresolved discrepancies — expand or open the Exception List section`
-                : 'Unresolved discrepancies categorized with actionable reasons for finance operations teams'}
+                ? `${total} unresolved items`
+                : 'Open items with a reason code for operations follow-up'}
             </p>
           </div>
         </button>
@@ -150,7 +150,7 @@ export function ExceptionTable({ runId, collapsible = false, defaultCollapsed = 
             disabled={exporting || total === 0}
           >
             <Download size={14} />
-            {exporting ? 'Exporting...' : 'Export CSV (FR-9)'}
+            {exporting ? 'Exporting…' : 'Export CSV'}
           </button>
         </div>
         )}
@@ -165,9 +165,9 @@ export function ExceptionTable({ runId, collapsible = false, defaultCollapsed = 
               <th>Source</th>
               <th>Reference ID</th>
               <th>Amount (₹)</th>
-              <th>Event Date</th>
-              <th>Reason Category</th>
-              <th>Diagnostic Detail & Financial Root Cause</th>
+              <th>Event date</th>
+              <th>Reason</th>
+              <th>Detail</th>
             </tr>
           </thead>
           <tbody>
@@ -192,12 +192,12 @@ export function ExceptionTable({ runId, collapsible = false, defaultCollapsed = 
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontWeight: '600', fontFamily: 'JetBrains Mono', fontSize: '0.85rem' }}>
+                    <span style={{ fontWeight: '600', fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.8rem' }}>
                       {exc.normalized_ref?.toUpperCase()}
                     </span>
                   </td>
                   <td>
-                    <span style={{ fontWeight: '700', color: 'var(--text-primary)' }}>
+                    <span className="tabular" style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
                       ₹{exc.amount_rupees}
                     </span>
                   </td>

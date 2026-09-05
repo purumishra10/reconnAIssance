@@ -1,6 +1,6 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Label, Tooltip, Sector } from 'recharts';
-import { CheckCheck, Sparkles, Filter, AlertCircle, ArrowRight, Layers } from 'lucide-react';
+import { CheckCheck, Cpu, Filter, AlertCircle, ArrowRight, Layers } from 'lucide-react';
 
 function DonutTooltip({ active, payload }) {
   if (!active || !payload?.length) return null;
@@ -44,60 +44,60 @@ export function TierBreakdown({ summary }) {
   const recallPct = ((summary.recall || 0) * 100).toFixed(1);
 
   const data = [
-    { name: 'Tier 1: Exact Match', value: exactCount, color: '#10b981' },
-    { name: 'Tier 2: Fuzzy & Tolerant', value: fuzzyCount, color: '#06b6d4' },
-    { name: 'Tier 3: AI-Assisted', value: aiCount, color: '#a855f7' },
-    { name: 'Unresolved Exceptions', value: excCount, color: '#f43f5e' },
+    { name: 'Tier 1: Exact', value: exactCount, color: '#0f766e' },
+    { name: 'Tier 2: Fuzzy', value: fuzzyCount, color: '#1a56db' },
+    { name: 'Tier 3: Model-assisted', value: aiCount, color: '#475569' },
+    { name: 'Exceptions', value: excCount, color: '#b42318' },
   ].filter((d) => d.value > 0);
 
   const stages = [
     {
-      title: 'Tier 1: Exact Match',
+      title: 'Tier 1 — Exact',
       subtitle: 'Deterministic join',
-      desc: 'Normalized order IDs, UTRs, and batch keys must match exactly. Highest throughput, no amount tolerance.',
-      method: 'Vector equality on canonical refs',
+      desc: 'Normalized order IDs, UTRs, and batch keys must match exactly. No amount tolerance.',
+      method: 'Equality on canonical refs',
       count: exactCount,
       remainingBefore: total,
       remainingAfter: total - exactCount,
       badgeClass: 'badge-exact',
       icon: CheckCheck,
-      color: '#10b981',
+      color: '#0f766e',
     },
     {
-      title: 'Tier 2: Fuzzy & Fee-Tolerant',
-      subtitle: 'Passed downstream from Tier 1',
-      desc: '2% MDR + 18% GST amount windows, ±5 day settlement lag, and Levenshtein similarity ≥ 80% on noisy refs.',
-      method: 'rapidfuzz + fee-aware paise math',
+      title: 'Tier 2 — Fuzzy',
+      subtitle: 'Unmatched after Tier 1',
+      desc: '2% MDR + 18% GST windows, T+2 date lag, and string similarity on noisy references.',
+      method: 'Fee-aware paise math',
       count: fuzzyCount,
       remainingBefore: total - exactCount,
       remainingAfter: total - exactCount - fuzzyCount,
       badgeClass: 'badge-fuzzy',
       icon: Filter,
-      color: '#06b6d4',
+      color: '#1a56db',
     },
     {
-      title: 'Tier 3: AI-Assisted',
-      subtitle: 'Ambiguous remainder only',
-      desc: 'LLM scores leftover many-to-one bundles, split settlements, and OCR/narration drift with cited confidence.',
-      method: 'Structured JSON inference',
+      title: 'Tier 3 — Model-assisted',
+      subtitle: 'Ambiguous remainder',
+      desc: 'Scores bundled payouts, split settlements, and narration drift with a confidence and reason.',
+      method: 'Structured inference',
       count: aiCount,
       remainingBefore: total - exactCount - fuzzyCount,
       remainingAfter: excCount,
       badgeClass: 'badge-ai',
-      icon: Sparkles,
-      color: '#a855f7',
+      icon: Cpu,
+      color: '#475569',
     },
     {
-      title: 'Exceptions Flagged',
+      title: 'Exceptions',
       subtitle: 'Unresolved after all tiers',
-      desc: 'AMOUNT_MISMATCH, NO_COUNTERPART_FOUND, DUPLICATE_SUSPECTED — exported as an inspectable exception list.',
+      desc: 'Amount mismatch, missing counterpart, or duplicate — available as an exportable work list.',
       method: 'Reason-code classifier',
       count: excCount,
       remainingBefore: excCount,
       remainingAfter: 0,
       badgeClass: 'badge-exc',
       icon: AlertCircle,
-      color: '#f43f5e',
+      color: '#b42318',
     },
   ];
 
@@ -105,14 +105,11 @@ export function TierBreakdown({ summary }) {
     <div className="glass-panel" style={{ padding: '1.25rem', marginBottom: '1.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>3-Tier Pipeline Cascading Breakdown</h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Each tier only sees what the previous one left unmatched — {recordCount} source records, {total} decisions
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '600' }}>Matching cascade</h3>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            Each tier sees only what the previous left unmatched · {recordCount} source records · {total} decisions
           </p>
         </div>
-        <span className="badge badge-fuzzy" style={{ fontSize: '0.75rem' }}>
-          ADR-001 Enforced
-        </span>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 0.9fr) 1.4fr', gap: '1.5rem', alignItems: 'center', marginBottom: '1.35rem' }}>
@@ -153,8 +150,8 @@ export function TierBreakdown({ summary }) {
                           dominantBaseline="middle"
                           fill="var(--text-primary)"
                           fontSize={22}
-                          fontWeight={800}
-                          fontFamily="Outfit, Inter, sans-serif"
+                          fontWeight={600}
+                          fontFamily="IBM Plex Sans, sans-serif"
                         >
                           {total}
                         </text>
@@ -167,7 +164,7 @@ export function TierBreakdown({ summary }) {
                           fontSize={10}
                           fontWeight={600}
                           letterSpacing="0.08em"
-                          fontFamily="Inter, sans-serif"
+                          fontFamily="IBM Plex Sans, sans-serif"
                         >
                           DECISIONS
                         </text>
@@ -209,17 +206,17 @@ export function TierBreakdown({ summary }) {
             ].map((stat) => (
               <div key={stat.label} style={{ padding: '0.65rem 0.75rem', borderRadius: '8px', background: 'var(--bg-secondary)', border: '1px solid var(--border-subtle)' }}>
                 <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>{stat.label}</div>
-                <div style={{ fontSize: '1.05rem', fontWeight: 800, fontFamily: 'Outfit', color: stat.color, marginTop: '0.15rem' }}>{stat.value}</div>
+                <div className="tabular" style={{ fontSize: '1.05rem', fontWeight: 600, color: stat.color, marginTop: '0.15rem' }}>{stat.value}</div>
               </div>
             ))}
           </div>
 
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-            Cascade starts with <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> unmatched decisions.
-            Tier 1 absorbs <strong style={{ color: '#10b981' }}>{((exactCount / total) * 100).toFixed(1)}%</strong>,
-            Tier 2 takes <strong style={{ color: '#06b6d4' }}>{((fuzzyCount / Math.max(total - exactCount, 1)) * 100).toFixed(1)}%</strong> of the remainder,
-            Tier 3 resolves <strong style={{ color: '#a855f7' }}>{((aiCount / Math.max(total - exactCount - fuzzyCount, 1)) * 100).toFixed(1)}%</strong> of what is still ambiguous,
-            leaving <strong style={{ color: '#f43f5e' }}>{excCount}</strong> honest exceptions.
+            Starts with <strong style={{ color: 'var(--text-primary)' }}>{total}</strong> unmatched decisions.
+            Tier 1 takes <strong style={{ color: '#0f766e' }}>{((exactCount / total) * 100).toFixed(1)}%</strong>,
+            Tier 2 takes <strong style={{ color: '#1a56db' }}>{((fuzzyCount / Math.max(total - exactCount, 1)) * 100).toFixed(1)}%</strong> of the remainder,
+            Tier 3 resolves <strong style={{ color: '#475569' }}>{((aiCount / Math.max(total - exactCount - fuzzyCount, 1)) * 100).toFixed(1)}%</strong> of what is still ambiguous,
+            leaving <strong style={{ color: '#b42318' }}>{excCount}</strong> exceptions.
           </div>
         </div>
       </div>
