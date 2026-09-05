@@ -3,32 +3,38 @@ import { LayoutDashboard, PlayCircle, MessageSquareText, FileSearch, GitMerge, A
 
 export function Sidebar({ activeTab, onSelectTab }) {
   const navItems = [
-    { id: 'dashboard', label: 'Overview & Metrics', icon: LayoutDashboard },
-    { id: 'matches', label: 'Matched Groups', icon: GitMerge },
-    { id: 'exceptions', label: 'Exception List', icon: AlertTriangle },
-    { id: 'reconcile', label: 'Run Reconciliation', icon: PlayCircle },
+    { id: 'dashboard', label: 'Overview', icon: LayoutDashboard },
+    { id: 'matches', label: 'Matched groups', icon: GitMerge },
+    { id: 'exceptions', label: 'Exceptions', icon: AlertTriangle },
+    { id: 'reconcile', label: 'Run reconciliation', icon: PlayCircle },
     { id: 'qa', label: 'Settlement Q&A', icon: MessageSquareText },
-    { id: 'audit', label: 'Audit Trail', icon: FileSearch },
+    { id: 'audit', label: 'Audit trail', icon: FileSearch },
   ];
 
   return (
     <aside
-      className="glass-panel"
       style={{
-        width: '240px',
-        minHeight: 'calc(100vh - 65px)',
-        borderRadius: '0',
-        borderLeft: 'none',
-        borderBottom: 'none',
-        borderTop: 'none',
-        padding: '1.25rem 0.85rem',
+        width: '220px',
+        minHeight: 'calc(100vh - 57px)',
+        background: 'var(--bg-sidebar)',
+        padding: '1.1rem 0.7rem',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.4rem',
+        gap: '0.15rem',
+        flexShrink: 0,
       }}
     >
-      <div style={{ padding: '0.5rem 0.75rem', fontSize: '0.7rem', textTransform: 'uppercase', color: 'var(--text-muted)', fontWeight: '700', letterSpacing: '0.05em' }}>
-        Navigation
+      <div
+        style={{
+          padding: '0.35rem 0.75rem 0.65rem',
+          fontSize: '0.65rem',
+          textTransform: 'uppercase',
+          color: 'rgba(197, 208, 222, 0.55)',
+          fontWeight: '600',
+          letterSpacing: '0.08em',
+        }}
+      >
+        Workspace
       </div>
 
       {navItems.map((item) => {
@@ -37,59 +43,30 @@ export function Sidebar({ activeTab, onSelectTab }) {
         return (
           <button
             key={item.id}
+            className={`nav-item${isActive ? ' active' : ''}`}
             onClick={() => onSelectTab(item.id)}
             aria-label={item.label}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              width: '100%',
-              padding: '0.65rem 0.85rem',
-              borderRadius: '8px',
-              border: '1px solid',
-              borderColor: isActive ? 'var(--border-focus)' : 'transparent',
-              background: isActive
-                ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(37, 99, 235, 0.12))'
-                : 'transparent',
-              color: isActive ? 'var(--accent-cyan)' : 'var(--text-secondary)',
-              fontWeight: isActive ? '600' : '500',
-              fontSize: '0.85rem',
-              cursor: 'pointer',
-              transition: 'all 0.15s ease',
-              textAlign: 'left',
-            }}
-            onMouseEnter={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.background = 'var(--bg-tertiary)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!isActive) {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-              }
-            }}
+            aria-current={isActive ? 'page' : undefined}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-              <Icon size={18} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <Icon size={16} strokeWidth={1.75} />
               <span>{item.label}</span>
             </div>
-            {item.badge !== undefined && item.badge > 0 && (
-              <span className="badge badge-exc" style={{ fontSize: '0.65rem', padding: '0.1rem 0.45rem' }}>
-                {item.badge}
-              </span>
-            )}
           </button>
         );
       })}
 
-      <div style={{ marginTop: 'auto', padding: '1rem 0.75rem', background: 'var(--bg-tertiary)', borderRadius: '10px', fontSize: '0.75rem' }}>
-        <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-          Held-out Split
-        </div>
-        <p style={{ color: 'var(--text-secondary)', lineHeight: '1.4' }}>
-          Metrics are scored strictly on the untouched test batch per ADR-003.
+      <div
+        style={{
+          marginTop: 'auto',
+          padding: '0.85rem 0.75rem',
+          borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+          fontSize: '0.72rem',
+        }}
+      >
+        <div style={{ fontWeight: '600', color: '#e8edf4', marginBottom: '0.3rem' }}>Held-out scoring</div>
+        <p style={{ color: 'var(--text-on-navy)', lineHeight: '1.45' }}>
+          Precision and recall are computed only on the untouched test split.
         </p>
       </div>
     </aside>

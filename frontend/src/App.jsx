@@ -9,7 +9,7 @@ import { ExceptionTable } from './components/dashboard/ExceptionTable';
 import { RunForm } from './components/reconcile/RunForm';
 import { ChatPanel } from './components/qa/ChatPanel';
 import { AuditInspector } from './components/audit/AuditInspector';
-import { Sparkles, Activity, CheckCircle, AlertCircle, RefreshCw, X } from 'lucide-react';
+import { AlertCircle, RefreshCw, X } from 'lucide-react';
 
 const MAX_POLL_ITERATIONS = 120; // 2 minutes at 1s interval
 
@@ -30,14 +30,13 @@ function Toast({ message, onClose }) {
         display: 'flex',
         alignItems: 'center',
         gap: '0.65rem',
-        padding: '0.85rem 1.25rem',
-        background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(185, 28, 28, 0.95))',
+        padding: '0.75rem 1.1rem',
+        background: '#7f1d1d',
         color: '#fff',
-        borderRadius: '12px',
-        fontSize: '0.85rem',
-        boxShadow: '0 8px 32px rgba(239, 68, 68, 0.35)',
-        backdropFilter: 'blur(8px)',
-        animation: 'slideInRight 0.3s ease-out',
+        borderRadius: '6px',
+        fontSize: '0.82rem',
+        boxShadow: 'var(--shadow-md)',
+        animation: 'slideInRight 0.25s ease-out',
         maxWidth: '420px',
       }}
     >
@@ -223,7 +222,7 @@ export function App() {
     setCycle({
       generating: true,
       running: false,
-      statusMessage: '1/2 Generating synthetic dataset with 9 financial noise patterns...',
+      statusMessage: '1/2 Generating synthetic ledger, settlement, and bank files…',
       summary: null,
     });
 
@@ -238,7 +237,7 @@ export function App() {
         ...prev,
         generating: false,
         running: true,
-        statusMessage: `2/2 Executing 3-tier reconciliation on ${targetSplit} split...`,
+        statusMessage: `2/2 Running reconciliation on the ${targetSplit} split…`,
       }));
 
       const runRes = await api.startReconcileRun({
@@ -269,7 +268,7 @@ export function App() {
             setCycle({
               generating: false,
               running: false,
-              statusMessage: `Reconciliation completed successfully! Match rate: ${((sum.match_rate || 0) * 100).toFixed(1)}%`,
+              statusMessage: `Run complete. Match rate ${((sum.match_rate || 0) * 100).toFixed(1)}%.`,
               summary: sum,
             });
             await handleRunCompleted(runId);
@@ -322,17 +321,19 @@ export function App() {
         />
 
         {/* Content View Area */}
-        <main style={{ flex: 1, padding: '1.5rem 2rem', overflowY: 'auto' }}>
+        <main style={{ flex: 1, padding: '1.35rem 1.75rem', overflowY: 'auto' }}>
           {loading ? (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', flexDirection: 'column', gap: '1rem', color: 'var(--text-muted)' }}>
-              <RefreshCw size={32} className="animate-spin" color="var(--accent-cyan)" />
-              <div style={{ fontSize: '0.95rem' }}>Bootstrapping reconnAIssance multi-tier financial pipeline...</div>
+              <RefreshCw size={22} className="animate-spin" color="var(--text-muted)" />
+              <div style={{ fontSize: '0.875rem' }}>Loading run data…</div>
             </div>
           ) : (
             <>
               {/* Dashboard Overview Tab */}
               {activeTab === 'dashboard' && (
                 <div>
+                  <div className="page-kicker">Controller</div>
+                  <h2 className="page-title">Reconciliation overview</h2>
                   <MetricsRow summary={summary} />
                   <TierBreakdown summary={summary} />
                   <div style={{ marginBottom: '1.5rem' }}>
@@ -346,18 +347,24 @@ export function App() {
 
               {activeTab === 'matches' && (
                 <div>
+                  <div className="page-kicker">Worklist</div>
+                  <h2 className="page-title">Matched groups</h2>
                   <MatchTable runId={currentRunId} />
                 </div>
               )}
 
               {activeTab === 'exceptions' && (
                 <div>
+                  <div className="page-kicker">Worklist</div>
+                  <h2 className="page-title">Exceptions</h2>
                   <ExceptionTable runId={currentRunId} />
                 </div>
               )}
 
               {/* Run Reconciliation Tab — stay mounted so form + last-run results survive tab switches */}
               <div style={{ display: activeTab === 'reconcile' ? 'block' : 'none' }}>
+                <div className="page-kicker">Pipeline</div>
+                <h2 className="page-title">Run reconciliation</h2>
                 <RunForm
                   cycle={cycle}
                   form={reconcileForm}
@@ -372,14 +379,14 @@ export function App() {
                 )}
               </div>
 
-              {/* Settlement Q&A Tab */}
               <div style={{ display: activeTab === 'qa' ? 'block' : 'none' }}>
+                <div className="page-kicker">Support</div>
                 <ChatPanel runId={currentRunId} />
               </div>
 
-              {/* Full Audit Trail Tab */}
               {activeTab === 'audit' && (
                 <div>
+                  <div className="page-kicker">Controls</div>
                   <AuditInspector runId={currentRunId} />
                 </div>
               )}
