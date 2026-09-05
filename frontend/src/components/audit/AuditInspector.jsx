@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { Search, FileSearch, Filter, ShieldCheck, Terminal } from 'lucide-react';
+import { Search } from 'lucide-react';
 
 export function AuditInspector({ runId }) {
   const [logs, setLogs] = useState([]);
@@ -54,7 +54,7 @@ export function AuditInspector({ runId }) {
       case 'ai_assisted':
         return <span className="badge badge-ai">AI Assisted</span>;
       case 'evaluation':
-        return <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--accent-cyan)' }}>Evaluation</span>;
+        return <span className="badge" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>Evaluation</span>;
       default:
         return <span className="badge">{tier}</span>;
     }
@@ -79,9 +79,9 @@ export function AuditInspector({ runId }) {
     <div className="glass-panel" style={{ padding: '1.25rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.75rem' }}>
         <div>
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>First-Class Queryable Audit Trail</h3>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            Complete deterministic decision history per ADR-007 — why every record was matched, rejected, or flagged
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '600' }}>Audit trail</h3>
+          <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            Decision history for this run — match, reject, or flag, with the recorded reason
           </p>
         </div>
 
@@ -142,8 +142,8 @@ export function AuditInspector({ runId }) {
               <th>Tier</th>
               <th>Action</th>
               <th>Confidence</th>
-              <th>Decision Reasoning & Financial Audit Log</th>
-              <th>Timestamp</th>
+              <th>Reason</th>
+              <th>Time</th>
             </tr>
           </thead>
           <tbody>
@@ -162,7 +162,7 @@ export function AuditInspector({ runId }) {
             ) : (
               filteredLogs.map((log) => (
                 <tr key={log.id}>
-                  <td style={{ fontFamily: 'JetBrains Mono', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  <td style={{ fontFamily: 'IBM Plex Mono, monospace', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     #{log.id}
                   </td>
                   <td>{getTierBadge(log.tier)}</td>
@@ -177,8 +177,8 @@ export function AuditInspector({ runId }) {
                   <td style={{ maxWidth: '450px', fontSize: '0.8rem', color: 'var(--text-primary)' }}>
                     <div>{log.reason}</div>
                     {log.raw_llm_response_json && (
-                      <details style={{ marginTop: '0.35rem', fontSize: '0.7rem', color: 'var(--accent-cyan)', cursor: 'pointer' }}>
-                        <summary>View raw LLM JSON decision</summary>
+                      <details style={{ marginTop: '0.35rem', fontSize: '0.7rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
+                        <summary>Raw model response</summary>
                         <pre style={{ background: 'var(--bg-primary)', padding: '0.5rem', borderRadius: '6px', marginTop: '0.25rem', overflowX: 'auto' }}>
                           {log.raw_llm_response_json}
                         </pre>

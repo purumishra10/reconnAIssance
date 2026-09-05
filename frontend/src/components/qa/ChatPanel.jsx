@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
-import { MessageSquareText, Send, Bot, User, Sparkles, Tag, HelpCircle } from 'lucide-react';
+import { Send, Bot, User, HelpCircle } from 'lucide-react';
 
 /**
  * Lightweight inline markdown renderer for bold (**), italic (*), and inline code (`).
@@ -61,7 +61,7 @@ export function ChatPanel({ runId }) {
     {
       role: 'assistant',
       content:
-        "Hi — I'm the **reconnAIssance assistant**. I only answer questions about this app: the 3-tier matching pipeline, Razorpay fees (2% MDR + 18% GST), T+2 settlements, and this run's metrics, matches, exceptions, and audit trail.",
+        "I can answer questions about this reconciliation run: the three-tier matcher, Razorpay fees (2% MDR + 18% GST), T+2 settlement timing, and this run's metrics, matches, exceptions, and audit log.",
       cited_audit_log_ids: [],
     },
   ]);
@@ -113,7 +113,7 @@ export function ChatPanel({ runId }) {
         ...prev,
         {
           role: 'assistant',
-          content: `⚠️ Failed to get answer: ${err.message}`,
+          content: `Could not retrieve an answer: ${err.message}`,
           cited_audit_log_ids: [],
         },
       ]);
@@ -131,25 +131,25 @@ export function ChatPanel({ runId }) {
             style={{
               width: '32px',
               height: '32px',
-              borderRadius: '8px',
-              background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-indigo))',
+              borderRadius: '6px',
+              background: '#0b1f3a',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: '#fff',
             }}
           >
-            <Bot size={18} />
+            <Bot size={16} />
           </div>
           <div>
-            <h3 style={{ fontSize: '1.05rem', fontWeight: '700' }}>Settlement Q&A Agent</h3>
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '600' }}>Settlement Q&A</h3>
             <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-              General questions about this app and the current reconciliation run
+              Questions about this run, fees, and matching decisions
             </p>
           </div>
         </div>
-        <span className={`badge ${llmLive ? 'badge-ai' : 'badge-exc'}`} style={{ fontSize: '0.7rem' }}>
-          {llmLive ? 'Gemini live' : 'Offline mock'}
+        <span className={`badge ${llmLive ? 'badge-exact' : 'badge-ai'}`} style={{ fontSize: '0.68rem', textTransform: 'none', letterSpacing: 0 }}>
+          {llmLive ? 'Live model' : 'Offline answers'}
         </span>
       </div>
 
@@ -163,12 +163,12 @@ export function ChatPanel({ runId }) {
               padding: '0.35rem 0.65rem',
               fontSize: '0.75rem',
               whiteSpace: 'nowrap',
-              borderRadius: '9999px',
+              borderRadius: '6px',
             }}
             onClick={() => handleSend(sq)}
             disabled={loading}
           >
-            <Sparkles size={12} color="var(--accent-cyan)" />
+            <HelpCircle size={12} color="var(--text-muted)" />
             {sq}
           </button>
         ))}
@@ -194,8 +194,8 @@ export function ChatPanel({ runId }) {
                   style={{
                     width: '28px',
                     height: '28px',
-                    borderRadius: '50%',
-                    background: 'var(--accent-cyan)',
+                    borderRadius: '6px',
+                    background: '#0b1f3a',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -204,19 +204,19 @@ export function ChatPanel({ runId }) {
                     marginTop: '2px',
                   }}
                 >
-                  <Bot size={15} />
+                  <Bot size={14} />
                 </div>
               )}
 
               <div
                 style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '12px',
-                  background: isBot ? 'var(--bg-tertiary)' : 'linear-gradient(135deg, var(--accent-blue), var(--accent-indigo))',
+                  padding: '0.7rem 0.9rem',
+                  borderRadius: '6px',
+                  background: isBot ? 'var(--bg-card)' : '#0b1f3a',
+                  border: isBot ? '1px solid var(--border-subtle)' : 'none',
                   color: isBot ? 'var(--text-primary)' : '#ffffff',
-                  fontSize: '0.85rem',
-                  lineHeight: '1.5',
-                  boxShadow: 'var(--shadow-sm)',
+                  fontSize: '0.84rem',
+                  lineHeight: '1.55',
                 }}
               >
                 <div style={{ whiteSpace: 'pre-wrap' }}>
@@ -236,7 +236,7 @@ export function ChatPanel({ runId }) {
                       flexWrap: 'wrap',
                     }}
                   >
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Cited Logs:</span>
+                    <span style={{ fontSize: '0.7rem', color: isBot ? 'var(--text-muted)' : 'rgba(255,255,255,0.7)' }}>Cited:</span>
                     {m.cited_audit_log_ids.map((id) => (
                       <span key={id} className="badge badge-fuzzy" style={{ fontSize: '0.65rem', padding: '0.05rem 0.35rem' }}>
                         #{id}
@@ -271,7 +271,7 @@ export function ChatPanel({ runId }) {
         {loading && (
           <div style={{ display: 'flex', gap: '0.65rem', alignItems: 'center', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
             <Bot size={18} className="animate-spin" />
-            Analyzing reconciled ledger context and fee tables...
+            Retrieving from this run’s ledger and audit context…
           </div>
         )}
       </div>

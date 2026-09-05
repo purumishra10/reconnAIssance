@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Sparkles, RefreshCw, Layers } from 'lucide-react';
+import { Play, RefreshCw, Layers, SlidersHorizontal } from 'lucide-react';
 
 export function RunForm({ cycle, form, onFormChange, onLaunch }) {
   const { selectedPreset, seed, recordCount, splitRatio, targetSplit } = form;
@@ -17,24 +17,24 @@ export function RunForm({ cycle, form, onFormChange, onLaunch }) {
   const presets = [
     {
       id: 'quick',
-      title: '🧪 Quick Smoke Test',
+      title: 'Smoke',
       count: 500,
       seed: 42,
-      desc: 'Fast 500-record batch for quick pipeline verification (~2s runtime)',
+      desc: '500 orders. Use this to verify the pipeline quickly.',
     },
     {
       id: 'demo',
-      title: '📊 Standard Demo (Target)',
+      title: 'Standard',
       count: 2000,
       seed: 42,
-      desc: 'Official 2,000-record realistic e-commerce batch with 9 noise patterns',
+      desc: '2,000 orders with T+2 lag, MDR/GST, and nine noise patterns.',
     },
     {
       id: 'stress',
-      title: '🔥 High-Throughput Stress Test',
+      title: 'High volume',
       count: 10000,
       seed: 42,
-      desc: '10,000-record high-volume test to demonstrate RPS throughput scaling',
+      desc: '10,000 orders for throughput measurement.',
     },
   ];
 
@@ -54,15 +54,14 @@ export function RunForm({ cycle, form, onFormChange, onLaunch }) {
   };
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
-      {/* Preset Selector Card */}
-      <div className="glass-panel" style={{ padding: '1.25rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-          <Layers size={18} color="var(--accent-cyan)" />
-          <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Dataset Volume & Presets</h3>
+    <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '1rem', marginBottom: '1.15rem' }}>
+      <div className="glass-panel" style={{ padding: '1.15rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
+          <Layers size={16} color="var(--text-secondary)" />
+          <h3 style={{ fontSize: '0.95rem', fontWeight: '600' }}>Dataset size</h3>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
           {presets.map((p) => {
             const isSelected = selectedPreset === p.id;
             return (
@@ -72,17 +71,17 @@ export function RunForm({ cycle, form, onFormChange, onLaunch }) {
                 className="app-card"
                 style={{
                   cursor: 'pointer',
+                  padding: '0.85rem 1rem',
                   borderColor: isSelected ? 'var(--border-focus)' : 'var(--border-subtle)',
                   background: isSelected ? 'var(--bg-card-hover)' : 'var(--bg-card)',
-                  boxShadow: isSelected ? '0 0 15px rgba(6, 182, 212, 0.15)' : 'none',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.25rem' }}>
-                  <div style={{ fontWeight: '700', fontSize: '0.95rem', color: isSelected ? 'var(--accent-cyan)' : 'var(--text-primary)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.2rem' }}>
+                  <div style={{ fontWeight: '600', fontSize: '0.875rem', color: 'var(--text-primary)' }}>
                     {p.title}
                   </div>
-                  <span className="badge badge-fuzzy" style={{ fontSize: '0.7rem' }}>
-                    {p.count.toLocaleString()} Orders
+                  <span className="badge badge-fuzzy" style={{ fontSize: '0.65rem', textTransform: 'none', letterSpacing: 0 }}>
+                    {p.count.toLocaleString()} orders
                   </span>
                 </div>
                 <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.desc}</p>
@@ -92,18 +91,17 @@ export function RunForm({ cycle, form, onFormChange, onLaunch }) {
         </div>
       </div>
 
-      {/* Pipeline Config & Launch Card */}
-      <div className="glass-panel" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+      <div className="glass-panel" style={{ padding: '1.15rem', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-            <Sparkles size={18} color="var(--accent-blue)" />
-            <h3 style={{ fontSize: '1.1rem', fontWeight: '700' }}>Pipeline Execution Controls</h3>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.9rem' }}>
+            <SlidersHorizontal size={16} color="var(--text-secondary)" />
+            <h3 style={{ fontSize: '0.95rem', fontWeight: '600' }}>Run controls</h3>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem', marginBottom: '1rem' }}>
             <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                RNG Seed
+              <label style={{ fontSize: '0.72rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                RNG seed
               </label>
               <input
                 type="number"
@@ -114,8 +112,8 @@ export function RunForm({ cycle, form, onFormChange, onLaunch }) {
               />
             </div>
             <div>
-              <label style={{ fontSize: '0.75rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
-                Evaluation Split
+              <label style={{ fontSize: '0.72rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                Evaluation split
               </label>
               <select
                 className="input-field"
@@ -123,24 +121,24 @@ export function RunForm({ cycle, form, onFormChange, onLaunch }) {
                 value={targetSplit}
                 onChange={(e) => updateForm({ targetSplit: e.target.value })}
               >
-                <option value="holdout">Held-out Split (20% test)</option>
-                <option value="tuning">Tuning Split (80% dev)</option>
-                <option value="all">Full Dataset (100%)</option>
+                <option value="holdout">Held-out (20% test)</option>
+                <option value="tuning">Tuning (80% dev)</option>
+                <option value="all">Full dataset</option>
               </select>
             </div>
           </div>
 
-          <div style={{ padding: '0.75rem', background: 'var(--bg-tertiary)', borderRadius: '8px', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1.25rem' }}>
-            <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.25rem' }}>
-              Execution Strategy:
+          <div style={{ padding: '0.7rem 0.8rem', background: 'var(--bg-tertiary)', borderRadius: '6px', fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '1.1rem', lineHeight: 1.5 }}>
+            <div style={{ fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
+              Sequence
             </div>
-            Vectorized Tier 1 exact match $\to$ Fee-tolerant Tier 2 fuzzy match $\to$ Contextual Tier 3 AI $\to$ Held-out scoring.
+            Exact match → fee-tolerant fuzzy match → model-assisted remainder → held-out scoring.
           </div>
         </div>
 
         <div>
           {statusMessage && (
-            <div style={{ fontSize: '0.75rem', color: 'var(--accent-cyan)', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: '0.7rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
               {(generating || running) && <RefreshCw size={12} className="animate-spin" />}
               {statusMessage}
             </div>
@@ -148,22 +146,22 @@ export function RunForm({ cycle, form, onFormChange, onLaunch }) {
 
           <button
             className="btn btn-primary"
-            style={{ width: '100%', padding: '0.75rem' }}
+            style={{ width: '100%', padding: '0.7rem' }}
             disabled={busy}
             onClick={handleGenerateAndRun}
           >
-            {hasResult && !busy ? <RefreshCw size={16} /> : <Play size={16} />}
+            {hasResult && !busy ? <RefreshCw size={15} /> : <Play size={15} />}
             {generating
-              ? 'Generating Data...'
+              ? 'Generating dataset…'
               : running
-                ? 'Reconciling Records...'
+                ? 'Reconciling…'
                 : hasResult
                   ? 'Rerun cycle'
-                  : 'Generate & Launch Reconciliation'}
+                  : 'Generate and run'}
           </button>
           {hasResult && !busy && (
-            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.55rem', textAlign: 'center' }}>
-              Results stay until you rerun. Rerun generates a new dataset and replaces this cycle.
+            <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '0.5rem', textAlign: 'center' }}>
+              On-screen results stay until you rerun. Rerun writes a new dataset and replaces this cycle.
             </p>
           )}
         </div>
